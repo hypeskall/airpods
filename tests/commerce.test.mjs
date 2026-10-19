@@ -66,3 +66,12 @@ test('consent, quantity and phone are validated before an order is saved',()=>{
  assert.throws(()=>validateOrder(input({customer:{...input().customer,phone:'123456789'}})),/telefon/);
  assert.throws(()=>validateOrder(input({website:'spam'})),/invalidă/);
 });
+
+test('catalog browsing is read-only after seeding and repairs missing models without resetting prices or stock',async()=>{
+ const db=database();await catalog(db);
+ db.sql.prepare('UPDATE products SET price=26000,stock=7 WHERE id=?').run('pro');
+ let writes=0;const batch=db.batch;db.batch=async statements=>{writes++;return batch(statements);};
+ const rows=await catalog(db);assert.equal(writes,0);assert.equal(rows.find(p=>p.id==='pro').price,26000);assert.equal(rows.find(p=>p.id==='pro').stock,7);
+ db.sql.prepare('DELETE FROM products WHERE id=?').run('four');const repaired=await catalog(db);
+ assert.equal(writes,1);assert.equal(repaired.length,3);assert.equal(repaired.find(p=>p.id==='pro').price,26000);assert.equal(repaired.find(p=>p.id==='pro').stock,7);
+});

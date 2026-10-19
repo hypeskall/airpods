@@ -20,8 +20,13 @@ export class CommerceError extends Error {
 }
 type Database = any;
 export async function catalog(db:Database){
+  const read=async()=> (await db.prepare('SELECT * FROM products ORDER BY CASE id WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END').bind('pro','four').all()).results;
+  const rows=await read();
+  // A normal catalog visit only reads. Seed once when a model is missing,
+  // avoiding three redundant D1 writes on every browse and checkout refresh.
+  if(DEFAULT_PRODUCTS.every(p=>rows.some((row:any)=>row.id===p.id)))return rows;
   await db.batch(DEFAULT_PRODUCTS.map(p=>db.prepare('INSERT OR IGNORE INTO products (id,name,price,stock,active,version) VALUES (?,?,?,NULL,1,1)').bind(p.id,p.name,p.price)));
-  return (await db.prepare('SELECT * FROM products ORDER BY CASE id WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END').bind('pro','four').all()).results;
+  return read();
 }
 export async function storeSettings(db:Database){
   const row=await db.prepare('SELECT value FROM store_settings WHERE id=?').bind('store').first();
