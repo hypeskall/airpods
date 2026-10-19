@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=b=>new Intl.NumberFormat('ro-RO',{style:'currency',currency:'RON'}).format(b/100),date=s=>new Date(s).toLocaleString('ro-RO',{dateStyle:'short',timeStyle:'short',timeZone:'Europe/Bucharest'});
 const statuses={new:'Nouă',confirmed:'Confirmată',shipped:'Expediată',delivered:'Livrată',cancelled:'Anulată',returned:'Returnată'},transitions={new:['new','confirmed','cancelled'],confirmed:['confirmed','shipped','cancelled'],shipped:['shipped','delivered','returned'],delivered:['delivered','returned'],cancelled:['cancelled'],returned:['returned']};
-const pictures={pro:'/assets/pro-case.png',four:'/assets/four.png',max:'/assets/max.png'};
+const pictures={pro:'/assets/airpods-pro-3.png',four:'/assets/airpods-4.png',max:'/assets/airpods-max.png'};
 let currentTab='orders',orders=[],page=1,total=0,loadingOrders=false,searchTimer,toastTimer;
 async function api(url,options={}){const r=await fetch(url,{...options,headers:{'Content-Type':'application/json',...options.headers}});const data=await r.json().catch(()=>({error:'Serviciul este indisponibil.'}));if(!r.ok)throw new Error(data.error||'Operația nu a reușit.');return data;}
 function error(message){$('#global-error').hidden=!message;$('#global-error').textContent=message||'';}

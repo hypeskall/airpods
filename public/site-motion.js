@@ -1,3 +1,4 @@
+import {initProductCarousel,disableProductCarouselMotion} from './product-carousel.js';
 let started=false,gsap,ScrollTrigger,productContext,productCleanup=[];
 const revealed=new WeakSet(),sectionTweens=new Map();
 let failed=false,refreshTimer;
@@ -55,12 +56,11 @@ function startSiteMotion(){
  const story=document.querySelector('.sound-story');
  if(story){
   const timeline=gsap.timeline({scrollTrigger:{trigger:story,start:'top top',end:'bottom bottom',scrub:1}});
-  timeline.fromTo('.story-image-scroll',{yPercent:14,rotation:-12,scale:.85},{yPercent:-9,rotation:5,scale:1.07,ease:'none'},0)
-   .fromTo('.story-word',{xPercent:-8,opacity:.18},{xPercent:9,opacity:.5,ease:'none'},0)
+  initProductCarousel(story,gsap);
+  timeline.fromTo('.story-panorama',{y:35},{y:-28,ease:'none'},0)
    .fromTo('.story-orbit',{rotation:-20,scale:.85},{rotation:20,scale:1.15,ease:'none'},0)
-   .fromTo('.story-progress>span',{scaleX:0},{scaleX:1,ease:'none'},0)
-   .fromTo('.story-copy h2 span:last-child',{opacity:.28},{opacity:1,ease:'none'},0);
-  gsap.from('.story-kicker,.story-copy h2,.story-copy>p,.story-cta,.story-features',{y:28,opacity:0,duration:.85,stagger:.08,ease:'power3.out',clearProps:'transform,opacity',immediateRender:false,scrollTrigger:{trigger:story,start:'top 65%',once:true}});
+   .fromTo('.story-progress>span',{scaleX:0},{scaleX:1,ease:'none'},0);
+  gsap.from('.story-scene-label,.story-navigation',{y:20,opacity:0,duration:.85,stagger:.1,ease:'power3.out',clearProps:'transform,opacity',immediateRender:false,scrollTrigger:{trigger:story,start:'top 65%',once:true}});
  }
  const progress=document.createElement('div');progress.className='reading-progress';progress.setAttribute('aria-hidden','true');document.body.prepend(progress);
  gsap.fromTo(progress,{scaleX:0},{scaleX:1,ease:'none',scrollTrigger:{start:0,end:'max',scrub:.2}});
@@ -75,10 +75,11 @@ function startSiteMotion(){
 function motionFailure(){
  failed=true;started=false;
  productCleanup.forEach(fn=>fn());productCleanup=[];
+ disableProductCarouselMotion(document.querySelector('.sound-story'));
  try{ScrollTrigger?.getAll().forEach(trigger=>trigger.kill());gsap?.globalTimeline.clear();}catch{}
  document.querySelectorAll('main [style]').forEach(el=>{['opacity','visibility','transform'].forEach(name=>el.style.removeProperty(name));});
  console.warn('Motion unavailable; the storefront remains usable.');
 }
 export function refreshSectionMotion(){if(!failed)try{updateSectionMotion();}catch{motionFailure();}}
 export function refreshProductMotion(){if(!failed)try{updateProductMotion();}catch{motionFailure();}}
-export function initSiteMotion(){if(!failed)try{startSiteMotion();}catch{motionFailure();}}
+export function initSiteMotion(){if(!failed)try{startSiteMotion();}catch{motionFailure();}initProductCarousel(document.querySelector('.sound-story'),failed?null:window.gsap);}

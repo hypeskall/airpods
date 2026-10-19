@@ -81,7 +81,10 @@ export async function placeOrder(db:Database,input:any,isTest=false){
   const predicates=items.map(()=>'(id=? AND active=1 AND version=? AND (?=1 OR stock IS NULL OR stock>=?))').join(' OR ');
   const args=items.flatMap((i:any)=>[i.id,i.version,isTest?1:0,i.quantity]);
   const insert=db.prepare(`INSERT INTO orders (id,reference,fingerprint,status,customer_name,phone,email,county,city,address,notes,items,subtotal,shipping,total,is_test,created_at,updated_at) SELECT ?,?,?,'new',?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM products WHERE ${predicates})=?`).bind(valid.key,reference,fingerprint,c.name,c.phone,c.email,c.county,c.city,c.address,c.notes,JSON.stringify(items),subtotal,shipping,total,isTest?1:0,now,now,...args,items.length);
-  const statements=[insert,...items.filter((i:any)=>i.reservedStock).map((i:any)=>db.prepare('UPDATE products SET stock=stock-?,version=version+1 WHERE id=? AND EXISTS(SELECT 1 FROM orders WHERE id=?)').bind(i.quantity,i.id,valid.key))];
+  // A simultaneous retry may find the first request's order after its own
+  // conditional INSERT affected zero rows. Only the original product version
+  // may reserve stock, preventing that retry from decrementing it again.
+  const statements=[insert,...items.filter((i:any)=>i.reservedStock).map((i:any)=>db.prepare('UPDATE products SET stock=stock-?,version=version+1 WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM orders WHERE id=?)').bind(i.quantity,i.id,i.version,valid.key))];
   try{
     const result=await db.batch(statements);
     if(result[0].meta.changes!==1)throw new CommerceError('Stocul s-a modificat. Actualizează produsele și încearcă din nou.',409);
