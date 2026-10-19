@@ -124,3 +124,5 @@ h1,h2,h3{font-family:Manrope,Arial,sans-serif}h1{font-weight:600}h2{font-weight:
 }
 /* Transparent manufacturer assets keep their original whites on every scene. */
 .collection .product-image>.product-tilt{mix-blend-mode:normal}
+/* A clipped stage cannot be internally scrolled by focus or carousel buttons. */
+.sound-story .story-stage{overflow:clip}
