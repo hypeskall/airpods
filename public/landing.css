@@ -126,3 +126,14 @@ h1,h2,h3{font-family:Manrope,Arial,sans-serif}h1{font-weight:600}h2{font-weight:
 .collection .product-image>.product-tilt{mix-blend-mode:normal}
 /* A clipped stage cannot be internally scrolled by focus or carousel buttons. */
 .sound-story .story-stage{overflow:clip}
+/* Fit the complete mobile scene beneath the persistent store header. */
+@media(max-width:799px){
+ .sound-story .story-stage{top:70px;height:calc(100svh - 70px);min-height:0}
+ .story-scene-label{top:28px}
+ .story-panorama{inset:62px 0 140px}
+ .sound-story .story-visual{min-height:0;margin:2px 0 0;padding-left:0;pointer-events:auto}
+ .collection .add-button{font-size:10.5px;padding-left:4px;padding-right:4px;letter-spacing:-.025em}
+ .collection .add-button>span{display:none}
+}
+@media(max-width:799px) and (max-height:740px){.story-panorama{inset:62px 0 130px}.sound-story .story-visual{min-height:0}}
+@media(max-width:360px){.collection .add-button{font-size:10px}}
