@@ -1,0 +1,5 @@
+import html from '../../storefront/admin.html?raw';
+import { isAdmin } from '../../lib/http';
+import { chatGPTSignInPath } from '../chatgpt-auth';
+export const dynamic='force-dynamic';
+export async function GET(){const allowed=await isAdmin();const body=allowed?html:`<!doctype html><html lang="ro"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>ElitePods — Acces administrare</title><link rel="stylesheet" href="/admin.css"></head><body><main class="login-panel"><a class="brand" href="/">elitepods ✳</a><h1>Doar pentru administrator.</h1><p>Autentifică-te cu contul proprietarului magazinului. Datele comenzilor sunt private.</p><a class="btn primary" href="${chatGPTSignInPath('/admin')}" target="_top">Autentificare administrator →</a><a class="back-link" href="/">Înapoi la magazin</a></main></body></html>`;return new Response(body,{status:allowed?200:403,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow'}});}

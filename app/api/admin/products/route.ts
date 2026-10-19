@@ -1,0 +1,5 @@
+import { catalog,clean,CommerceError } from '../../../../lib/commerce';
+import { requireAdmin,database,response,failure,jsonBody } from '../../../../lib/http';
+export const dynamic='force-dynamic';
+export async function GET(){try{await requireAdmin();return response({products:await catalog(database())});}catch(e){return failure(e);}}
+export async function PATCH(request:Request){try{await requireAdmin();const input=await jsonBody(request);const id=clean(input.id,'produsul',30,1);if(!Number.isInteger(input.price)||input.price<100||input.price>10000000||!Number.isInteger(input.version)||typeof input.active!=='boolean'||(input.stock!==null&&(!Number.isInteger(input.stock)||input.stock<0||input.stock>1000000)))throw new CommerceError('Verifică prețul și stocul.');const db=database();const result=await db.prepare('UPDATE products SET price=?,stock=?,active=?,version=version+1 WHERE id=? AND version=?').bind(input.price,input.stock,input.active?1:0,id,input.version).run();if(!result.meta.changes)throw new CommerceError('Produsul a fost modificat. Reîncarcă pagina.',409);return response({products:await catalog(db)});}catch(e){return failure(e);}}
