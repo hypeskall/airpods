@@ -1,8 +1,14 @@
 import shell from '../storefront/index.html?raw';
 import {productContent,productSpecs} from '../public/product-content.js';
+import {productCard} from '../public/product-card.js';
 export function esc(value:unknown){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
-export function storefront(content?:string,id?:string){
+export function storefront(content?:string,id?:string,catalogData?:{products:any[];settings:any}){
  let html=content?shell.replace(/<!-- CONTENT_START -->[\s\S]*<!-- CONTENT_END -->/,content):shell;
+ if(!content){
+  const models=['four','pro','max'].map(id=>{const visual=productContent.find(p=>p.id===id)!;const live=catalogData?.products.find(p=>p.id===id);return {...visual,...live};});
+  html=html.replace('<!-- PRODUCT_CARDS -->',models.map(p=>productCard(p,{pending:!catalogData})).join(''));
+ }
+ if(catalogData)html=html.replace('</body>',`<script type="application/json" id="catalog-bootstrap">${JSON.stringify(catalogData).replaceAll('<','\\u003c')}</script></body>`);
  if(id){const p=productContent.find(p=>p.id===id)!;html=html.replace('<body>',`<body data-product="${id}">`).replace('<title>ElitePods — Alege-ți AirPods.</title>',`<title>${esc(p.displayName)} — ElitePods</title>`);}
  return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});
 }
