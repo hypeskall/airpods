@@ -44,13 +44,13 @@
  .story-panorama{right:0;bottom:102px}
  .sound-story .story-image-motion{padding-left:22px;padding-right:76px;padding-bottom:12px}
  .sound-story .story-caption{right:58px}
- .story-directions{right:12px;top:72%;padding:5px;gap:7px;margin:0}
+ .story-directions{right:12px;top:60%;padding:5px;gap:7px;margin:0}
  .story-directions>button{width:44px;height:44px;padding:11px}
  .story-directions svg{width:19px;height:19px}
  .story-navigation{bottom:23px;display:block;padding-inline:24px}
  .story-models{width:100%}
  .sound-story .story-cta{padding:5px 6px 5px 16px;gap:12px}
 }
-@media(max-width:799px) and (max-height:740px){.story-panorama{bottom:85px}.story-navigation{bottom:13px}.story-directions{top:77%}}
+@media(max-width:799px) and (max-height:740px){.story-panorama{bottom:85px}.story-navigation{bottom:13px}.story-directions{top:66%}}
 @media(max-width:360px){.header.wrap{padding-inline:14px}.story-directions{right:9px}.sound-story .story-image-motion{padding-left:10px;padding-right:66px}}
 @supports not (backdrop-filter:blur(1px)){.header.wrap{background:#fdfdfdf2}.header.is-over-story{background:#141419f0}.story-directions{background:#2c2c38eb}}
