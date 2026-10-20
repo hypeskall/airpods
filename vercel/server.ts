@@ -10,11 +10,12 @@ import {shippingEmail} from '../lib/shipping-email';
 import {customerPage} from '../lib/customer-pages';
 import {saveStoreSettings,demoStoreSettings} from '../lib/store-settings';
 import {configuredMail,gmailSender,saveGmail} from './mail';
+import {brandHead} from '../lib/brand-metadata';
 
 type Options={db?:any;environment?:VercelEnvironment;now?:number;sendEmail?:typeof fetch};
 const securityHeaders={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'};
 export const json=(value:unknown,status=200,extra:Record<string,string>={})=>Response.json(value,{status,headers:{...securityHeaders,...extra}});
-const html=(value:string,status=200,extra:Record<string,string>={})=>new Response(value,{status,headers:{...securityHeaders,'Content-Type':'text/html; charset=utf-8',...extra}});
+const html=(value:string,status=200,extra:Record<string,string>={})=>new Response(value.includes('rel="icon"')?value:value.replace('</head>',brandHead()+'</head>'),{status,headers:{...securityHeaders,'Content-Type':'text/html; charset=utf-8',...extra}});
 const fail=(error:unknown)=>error instanceof CommerceError?json({error:error.message},error.status):json({error:'Serviciul este temporar indisponibil. Încearcă din nou.'},503);
 async function renderWithin<T>(operation:Promise<T>,milliseconds=1500):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;

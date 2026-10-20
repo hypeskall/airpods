@@ -3,8 +3,9 @@ import trackingContent from '../storefront/tracking.html?raw';
 import {productContent,productSpecs} from '../public/product-content.js';
 import {productCard} from '../public/product-card.js';
 import {shippingBenefit,shippingPolicy} from '../public/shipping-rules.js';
+import {brandHead} from './brand-metadata';
 export function esc(value:unknown){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
-export function storefront(content?:string,id?:string,catalogData?:{products:any[];settings:any},pageTitle?:string,stylesheet?:string){
+export function storefront(content?:string,id?:string,catalogData?:{products:any[];settings:any},pageTitle?:string,stylesheet?:string,pagePath='/'){
  let html=content?shell.replace(/<!-- CONTENT_START -->[\s\S]*<!-- CONTENT_END -->/,content):shell;
  if(!content){
   const models=['four','pro','max'].map(id=>{const visual=productContent.find(p=>p.id===id)!;const live=catalogData?.products.find(p=>p.id===id);return {...visual,...live};});
@@ -18,9 +19,11 @@ export function storefront(content?:string,id?:string,catalogData?:{products:any
  if(id){const p=productContent.find(p=>p.id===id)!;html=html.replace('<body>',`<body data-product="${id}">`).replace('<title>ElitePods — Alege-ți AirPods.</title>',`<title>${esc(p.displayName)} — ElitePods</title>`);}
  if(pageTitle)html=html.replace(/<title>[^<]*<\/title>/,`<title>${esc(pageTitle)}</title>`);
  if(stylesheet)html=html.replace('</head>',`<link rel="stylesheet" href="${esc(stylesheet)}"></head>`);
+ const title=id?productContent.find(p=>p.id===id)!.displayName+' — ElitePods':pageTitle||'ElitePods — Alege-ți AirPods.';
+ html=html.replace('</head>',brandHead(title,id?'/produse/'+id:pagePath)+'</head>');
  return new Response(html,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'}});
 }
-export function trackingPage(){return storefront(trackingContent,undefined,undefined,'Urmărește coletul — ElitePods');}
+export function trackingPage(){return storefront(trackingContent,undefined,undefined,'Urmărește coletul — ElitePods',undefined,'/tracking');}
 export function productPage(id:string){
  const p=productContent.find(p=>p.id===id);if(!p)return new Response('Produsul nu există.',{status:404});
  const specs=productSpecs[id as keyof typeof productSpecs];
