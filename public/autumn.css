@@ -11,7 +11,7 @@ body{background:var(--autumn-cream);color:var(--autumn-ink)}
 .icon-button:hover{background:#efe3d4}.reading-progress{background:linear-gradient(90deg,#6c3d27,#dba96a,#a45b36)}
 .store-banner{background:#f2eae0;color:#8d7b6b}
 .collection.wrap{padding-top:30px;isolation:isolate}
-.collection:before{content:'';position:absolute;z-index:-2;inset:-20px -4vw 0;pointer-events:none;background:radial-gradient(ellipse at 13% 22%,#edc99e27,transparent 37%),radial-gradient(ellipse at 92% 31%,#d8a16b1c,transparent 35%)}
+.collection:before{content:'';position:absolute;z-index:-2;inset:-20px 0 0;pointer-events:none;background:radial-gradient(ellipse at 13% 22%,#edc99e27,transparent 37%),radial-gradient(ellipse at 92% 31%,#d8a16b1c,transparent 35%)}
 .collection-heading{margin-bottom:30px}.collection-heading h1{font-size:clamp(61px,6.4vw,90px);margin-top:18px;margin-bottom:18px;letter-spacing:-.071em}
 .season-pill{display:inline-flex;align-items:center;gap:9px;border:1px solid #dcc5a8;border-radius:999px;padding:7px 12px;background:#f6ecde;font-size:8px;letter-spacing:.15em;color:#95643e;font-weight:650}
 .season-pill svg{width:16px;height:16px;stroke:#a5693d;stroke-width:1.1}
