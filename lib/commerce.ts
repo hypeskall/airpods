@@ -9,7 +9,7 @@ export const DEFAULT_PRODUCTS = [
 export const DEFAULT_SETTINGS = {
   ...DEFAULT_SHIPPING_RULE,
   shipping: 2499, shippingDays: '1–3 zile', shopName: 'ElitePods',
-  contactEmail: '', contactPhone: '', company: '', cui: '', companyAddress: '',
+  contactEmail: '', contactPhone: '', sellerType:'business', company: '', cui: '', companyAddress: '',
   returns: '', terms: '', privacy: '', checkoutOpen: false, demoData:false,
 };
 export const TRANSITIONS: Record<string,string[]> = {

@@ -165,6 +165,9 @@ test('shipping template escapes customer content, keeps a fixed courier origin a
 test('demo identity and incomplete legal drafts can never activate real checkout',()=>{
  const settings={shopName:'ElitePods',shipping:2499,shippingDays:'1–3 zile',contactEmail:'contact@example.com',contactPhone:'0700000000',company:'Test SRL',cui:'123',companyAddress:'Example 10',terms:'Terms',returns:'Returns',privacy:'Privacy',checkoutOpen:true};
  assert.equal(validateSettings(settings).checkoutOpen,true);
+ assert.equal(validateSettings({...settings,sellerType:'individual',company:'Vânzător Test',cui:''}).checkoutOpen,true);
+ assert.throws(()=>validateSettings({...settings,cui:''}),/identitatea/);
+ assert.throws(()=>validateSettings({...settings,sellerType:'unknown'}),/invalid/);
  assert.throws(()=>validateSettings({...settings,demoData:true}),/demonstrative/);
  assert.throws(()=>validateSettings({...settings,...policyDrafts(settings)}),/DE COMPLETAT/);
  assert.equal(emailReadiness({GMAIL_USER:'store@gmail.com'}).configured,false);

@@ -143,7 +143,11 @@ test('private fulfillment endpoints save shipment, simulate test email and prote
  assert.equal((await handleRequest(request('/api/admin/mail',{method:'PUT',body:{user:'store@gmail.com',appPassword:'bad'}}),options)).status,403);
  assert.equal((await handleRequest(request('/api/admin/mail',{method:'PUT',cookie:admin,body:{user:'store@gmail.com',appPassword:'bad'}}),options)).status,400);
  const draft=await handleRequest(request('/api/admin/settings/demo',{method:'POST',cookie:admin,body:{}}),options);const settings=(await draft.json()).settings;assert.equal(settings.demoData,true);assert.equal(settings.checkoutOpen,false);
- const contact=await handleRequest(request('/politici/contact'),options);const content=await contact.text();assert.match(content,/Datele de contact și politicile sunt demonstrative/);assert.ok(!content.includes('href="mailto:contact@elitepods.example"'));
+ const contact=await handleRequest(request('/politici/contact'),options);const content=await contact.text();assert.match(content,/Comenzile online nu sunt încă activate/);assert.ok(!content.includes('href="mailto:contact@elitepods.example"'));
+ const realContact={...settings,contactEmail:'support@merchant.ro',contactPhone:'0770000000',company:'',cui:'',companyAddress:''};
+ assert.equal((await handleRequest(request('/api/admin/settings',{method:'PUT',cookie:admin,body:realContact}),options)).status,200);
+ const realPage=await (await handleRequest(request('/politici/contact'),options)).text();assert.match(realPage,/href="mailto:support@merchant.ro"/);assert.match(realPage,/href="tel:0770000000"/);assert.doesNotMatch(realPage,/Datele de contact și politicile sunt demonstrative/);
+ assert.equal((await handleRequest(request('/api/admin/settings',{method:'PUT',cookie:admin,body:{...realContact,checkoutOpen:true}}),options)).status,400);
  assert.equal((await handleRequest(request('/api/admin/settings',{method:'PUT',cookie:admin,body:{...settings,checkoutOpen:true}}),options)).status,400);
 });
 
