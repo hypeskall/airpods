@@ -50,7 +50,7 @@ function harness({synchronizeOrderReads=false}={}){
 function request(route,{method='GET',body,cookie,headers={}}={}){
   return new Request('https://elitepods.example'+route,{method,headers:{...(body!==undefined?{'content-type':'application/json',origin:'https://elitepods.example'}:{}),...(cookie?{cookie}:{}),...headers},...(body!==undefined?{body:typeof body==='string'?body:JSON.stringify(body)}:{})});
 }
-function input(overrides={}){return {idempotencyKey:crypto.randomUUID(),items:[{id:'pro',quantity:1}],customer:{name:'Client Test',phone:'0700000000',email:'',county:'Cluj',city:'Cluj-Napoca',address:'Strada Exemplu 1',notes:''},expectedTotal:27399,acceptedTerms:true,website:'',...overrides};}
+function input(overrides={}){return {idempotencyKey:crypto.randomUUID(),items:[{id:'pro',quantity:1}],customer:{name:'Client Test',phone:'0700000000',email:'client@example.com',county:'Cluj',city:'Cluj-Napoca',address:'Strada Exemplu 1',notes:''},expectedTotal:27399,acceptedTerms:true,website:'',...overrides};}
 const cookie=()=>createSession(request('/admin'),environment).split(';')[0];
 
 test('Vercel schema initialization is idempotent and batch failures roll back all writes',async()=>{
@@ -60,7 +60,7 @@ test('Vercel schema initialization is idempotent and batch failures roll back al
   assert.equal((await h.db.prepare('SELECT price FROM products WHERE id=?').bind('pro').first()).price,25100);
   await assert.rejects(h.db.batch([h.db.prepare('UPDATE products SET stock=9 WHERE id=?').bind('pro'),h.db.prepare('INSERT INTO missing_table VALUES (?)').bind('failure')]));
   assert.equal((await h.db.prepare('SELECT stock FROM products WHERE id=?').bind('pro').first()).stock,null);
-  assert.equal(h.sql.prepare('SELECT COUNT(*) AS value FROM elitepods_migrations').get().value,1);
+  assert.equal(h.sql.prepare('SELECT COUNT(*) AS value FROM elitepods_migrations').get().value,2);
 });
 
 test('admin sessions reject forged headers, changed signatures, expiry and password rotation',async()=>{
@@ -126,6 +126,25 @@ test('settings and product changes retain validation, stale version protection a
   const body={id:'pro',version:1,price:24900,active:true,stock:2};
   assert.equal((await handleRequest(request('/api/admin/products',{method:'PATCH',cookie:admin,body}),options)).status,200);
   assert.equal((await handleRequest(request('/api/admin/products',{method:'PATCH',cookie:admin,body}),options)).status,409);
+});
+
+test('private fulfillment endpoints save shipment, simulate test email and protect customer and Gmail data',async()=>{
+ const h=harness();await migrateDatabase(h.client);const options={db:h.db,environment},admin=cookie(),body=input();
+ await handleRequest(request('/api/orders',{method:'POST',cookie:admin,body:{...body,isTest:true}}),options);
+ const endpoint='/api/admin/orders/'+body.idempotencyKey;
+ assert.equal((await handleRequest(request(endpoint),options)).status,403);
+ const update={version:1,status:'shipped',paid:false,tracking:'7000158682653',internalNote:''};
+ assert.equal((await handleRequest(request(endpoint,{method:'PATCH',cookie:admin,body:{...update,tracking:''}}),options)).status,400);
+ const saved=await handleRequest(request(endpoint,{method:'PATCH',cookie:admin,body:update}),options);assert.equal(saved.status,200);const data=await saved.json();assert.equal(data.order.status,'shipped');assert.equal(data.emails[0].state,'skipped');assert.equal(data.events.length,1);
+ const retry=await handleRequest(request(endpoint+'/retry-email',{method:'POST',cookie:admin,body:{}}),options);assert.equal(retry.status,200);
+ assert.equal((await handleRequest(request(endpoint+'/retry-email',{method:'POST',cookie:admin,body:{},headers:{origin:'https://attacker.example'}}),options)).status,403);
+ const preview=await handleRequest(request('/api/admin/email-preview',{cookie:admin}),options);assert.match(await preview.text(),/Următoarea oprire/);
+ const ready=await handleRequest(request('/api/admin/readiness',{cookie:admin}),options);const readiness=await ready.json();assert.equal(readiness.email.configured,false);assert.ok(!JSON.stringify(readiness).includes('SESSION_SECRET'));
+ assert.equal((await handleRequest(request('/api/admin/mail',{method:'PUT',body:{user:'store@gmail.com',appPassword:'bad'}}),options)).status,403);
+ assert.equal((await handleRequest(request('/api/admin/mail',{method:'PUT',cookie:admin,body:{user:'store@gmail.com',appPassword:'bad'}}),options)).status,400);
+ const draft=await handleRequest(request('/api/admin/settings/demo',{method:'POST',cookie:admin,body:{}}),options);const settings=(await draft.json()).settings;assert.equal(settings.demoData,true);assert.equal(settings.checkoutOpen,false);
+ const contact=await handleRequest(request('/politici/contact'),options);const content=await contact.text();assert.match(content,/Datele de contact și politicile sunt demonstrative/);assert.ok(!content.includes('href="mailto:contact@elitepods.example"'));
+ assert.equal((await handleRequest(request('/api/admin/settings',{method:'PUT',cookie:admin,body:{...settings,checkoutOpen:true}}),options)).status,400);
 });
 
 test('simultaneous identical retries reserve one unit and return the same receipt',async()=>{

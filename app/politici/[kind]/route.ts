@@ -1,5 +1,5 @@
-import { storeSettings } from '../../../lib/commerce';
-import { database,failure } from '../../../lib/http';
+import {storeSettings} from '../../../lib/commerce';
+import {customerPage} from '../../../lib/customer-pages';
+import {database,failure} from '../../../lib/http';
 export const dynamic='force-dynamic';
-const escape=(v:string)=>v.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
-export async function GET(_request:Request,context:{params:Promise<{kind:string}>}){try{const {kind}=await context.params;const pages:Record<string,[string,string]>={termeni:['Termeni și condiții','terms'],confidentialitate:['Confidențialitate','privacy'],retur:['Livrare și retur','returns'],contact:['Contact','contact']};if(!pages[kind])return new Response('Pagina nu există',{status:404});const [title,key]=pages[kind];const s=await storeSettings(database());const content=key==='contact'?[s.company,s.cui?'CUI: '+s.cui:'',s.companyAddress,s.contactEmail,s.contactPhone].filter(Boolean).join('\n'):s[key as keyof typeof s];return new Response(`<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} — ElitePods</title><link rel="stylesheet" href="/admin.css"></head><body><main class="policy-page"><a class="brand" href="/">elitepods ✳</a><h1>${title}</h1><div class="policy-copy">${escape(String(content||'Informațiile sunt în curs de completare. Magazinul nu este încă deschis pentru comenzi.'))}</div><a class="btn" href="/">← Înapoi la magazin</a></main></body></html>`,{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}catch(e){return failure(e);}}
+export async function GET(_request:Request,context:{params:Promise<{kind:string}>}){try{const {kind}=await context.params;return customerPage(kind,await storeSettings(database()));}catch(e){return failure(e);}}

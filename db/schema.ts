@@ -42,3 +42,10 @@ export const limits = sqliteTable('request_limits', {
   windowStart: integer('window_start').notNull(),
   attempts: integer('attempts').notNull(),
 });
+export const orderEvents=sqliteTable('order_events',{
+  id:text('id').primaryKey(),orderId:text('order_id').notNull(),kind:text('kind').notNull(),message:text('message').notNull(),createdAt:text('created_at').notNull(),
+},t=>[index('order_events_order').on(t.orderId,t.createdAt)]);
+export const shippingEmails=sqliteTable('shipping_emails',{
+  id:text('id').primaryKey(),orderId:text('order_id').notNull(),recipient:text('recipient').notNull(),tracking:text('tracking').notNull(),payload:text('payload').notNull(),state:text('state').notNull().default('pending'),attempts:integer('attempts').notNull().default(0),firstAttempt:text('first_attempt'),leaseUntil:text('lease_until'),claim:text('claim'),providerId:text('provider_id'),error:text('error').notNull().default(''),createdAt:text('created_at').notNull(),updatedAt:text('updated_at').notNull(),
+},t=>[index('shipping_emails_order').on(t.orderId,t.createdAt)]);
+export const mailConfig=sqliteTable('mail_config',{id:text('id').primaryKey(),value:text('value').notNull()});

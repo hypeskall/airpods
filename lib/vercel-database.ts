@@ -1,5 +1,6 @@
 import {createClient, type Client, type InStatement, type ResultSet} from '@libsql/client/web';
 import migration from '../drizzle/0000_yellow_hairball.sql?raw';
+import fulfillmentMigration from '../drizzle/0001_tranquil_carlie_cooper.sql?raw';
 import {CommerceError} from './commerce';
 
 export type VercelEnvironment = Record<string,string|undefined>;
@@ -35,14 +36,15 @@ export function adaptDatabase(client:Pick<Client,'execute'|'batch'>){
 /** Idempotent initialization, including when two cold functions initialize together. */
 export async function migrateDatabase(client:Pick<Client,'execute'|'batch'>){
   await client.execute('CREATE TABLE IF NOT EXISTS elitepods_migrations (id TEXT PRIMARY KEY NOT NULL, applied_at TEXT NOT NULL)');
-  const id='0000_yellow_hairball';
+  for(const [id,source] of [['0000_yellow_hairball',migration],['0001_tranquil_carlie_cooper',fulfillmentMigration]]){
   const applied=await client.execute({sql:'SELECT id FROM elitepods_migrations WHERE id=?',args:[id]});
-  if(applied.rows.length)return;
-  const statements=migration.split('--> statement-breakpoint').map(sql=>sql.trim()).filter(Boolean).map(sql=>({
+  if(applied.rows.length)continue;
+  const statements=source.split('--> statement-breakpoint').map(sql=>sql.trim()).filter(Boolean).map(sql=>({
     sql:sql.replace(/CREATE TABLE\s+/g,'CREATE TABLE IF NOT EXISTS ').replace(/CREATE UNIQUE INDEX\s+/g,'CREATE UNIQUE INDEX IF NOT EXISTS ').replace(/CREATE INDEX\s+/g,'CREATE INDEX IF NOT EXISTS '),
     args:[],
   }));
   await client.batch([...statements,{sql:'INSERT OR IGNORE INTO elitepods_migrations (id,applied_at) VALUES (?,?)',args:[id,new Date().toISOString()]}],'write');
+  }
 }
 
 let cachedKey='';

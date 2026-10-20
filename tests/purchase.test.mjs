@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {fieldError,normalizePhone,pendingKey} from '../public/purchase-core.js';
 import {validateOrder} from '../lib/commerce.ts';
 function storage(){const data=new Map();return {getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v),data};}
-const payload=()=>({items:[{id:'pro',quantity:1}],customer:{name:'Client Test',phone:'0700000000',email:'',county:'Cluj',city:'Cluj-Napoca',address:'Strada Exemplu 1',notes:''},expectedTotal:27399,acceptedTerms:true,isTest:true});
+const payload=()=>({items:[{id:'pro',quantity:1}],customer:{name:'Client Test',phone:'0700000000',email:'client@example.com',county:'Cluj',city:'Cluj-Napoca',address:'Strada Exemplu 1',notes:''},expectedTotal:27399,acceptedTerms:true,isTest:true});
 test('retry key survives a new page instance without persisting shipping data',async()=>{
  const s=storage(),body=payload(),key=await pendingKey(body,s);
  assert.equal(await pendingKey(JSON.parse(JSON.stringify(body)),s),key);
@@ -23,8 +23,8 @@ test('Romanian local and international phone formats normalize to server-accepte
  }
  for(const phone of ['123','070000000','+44 700 000 000','0700abc000'])assert.ok(fieldError('phone',phone));
 });
-test('required fields and optional fields reject mistakes without requiring email',()=>{
+test('delivery fields require a valid email for shipment notifications',()=>{
  for(const name of ['fullName','phone','county','city','address'])assert.ok(fieldError(name,''));
- assert.equal(fieldError('email',''),'');assert.ok(fieldError('email','abc@invalid'));
+ assert.ok(fieldError('email',''));assert.ok(fieldError('email','abc@invalid'));
  assert.ok(fieldError('acceptedTerms',false));assert.equal(fieldError('acceptedTerms',true),'');
 });

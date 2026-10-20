@@ -5,8 +5,13 @@ import {catalog,clean,CommerceError,decodeOrder,DEFAULT_PRODUCTS,DEFAULT_SETTING
 import {esc,productPage,storefront,trackingPage} from '../lib/storefront';
 import {authenticated,authenticationConfigured,checkPassword,clearSession,createSession} from '../lib/vercel-auth';
 import {vercelDatabase,type VercelEnvironment} from '../lib/vercel-database';
+import {emailReadiness,orderDetail,sendPendingForOrder,authorizeResend} from '../lib/fulfillment';
+import {shippingEmail} from '../lib/shipping-email';
+import {customerPage} from '../lib/customer-pages';
+import {saveStoreSettings,demoStoreSettings} from '../lib/store-settings';
+import {configuredMail,gmailSender,saveGmail} from './mail';
 
-type Options={db?:any;environment?:VercelEnvironment;now?:number};
+type Options={db?:any;environment?:VercelEnvironment;now?:number;sendEmail?:typeof fetch};
 const securityHeaders={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'};
 export const json=(value:unknown,status=200,extra:Record<string,string>={})=>Response.json(value,{status,headers:{...securityHeaders,...extra}});
 const html=(value:string,status=200,extra:Record<string,string>={})=>new Response(value,{status,headers:{...securityHeaders,'Content-Type':'text/html; charset=utf-8',...extra}});
@@ -60,14 +65,6 @@ function adminPage(){
   return html(body,200,{'X-Robots-Tag':'noindex, nofollow'});
 }
 
-function policyPage(kind:string,settings:typeof DEFAULT_SETTINGS){
-  const pages:Record<string,[string,string]>={termeni:['Termeni și condiții','terms'],confidentialitate:['Confidențialitate','privacy'],retur:['Livrare și retur','returns'],contact:['Contact','contact']};
-  if(!pages[kind])return new Response('Pagina nu există.',{status:404,headers:securityHeaders});
-  const [title,key]=pages[kind];
-  const content=key==='contact'?[settings.company,settings.cui?'CUI: '+settings.cui:'',settings.companyAddress,settings.contactEmail,settings.contactPhone].filter(Boolean).join('\n'):settings[key as keyof typeof settings];
-  return html(`<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} — ElitePods</title><link rel="stylesheet" href="/admin.css"></head><body><main class="policy-page"><a class="brand" href="/">ElitePods</a><h1>${esc(title)}</h1><div class="policy-copy">${esc(content||'Informațiile sunt în curs de completare. Magazinul nu este încă deschis pentru comenzi.')}</div><a class="btn" href="/">← Înapoi la magazin</a></main></body></html>`);
-}
-
 function csvCell(value:unknown){let text=String(value??'');if(/^[=+\-@\t\r]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}
 async function orderList(url:URL,db:any){
   const status=url.searchParams.get('status')||'';
@@ -94,14 +91,7 @@ async function exportOrders(url:URL,db:any){
 }
 
 async function saveSettings(input:any,db:any){
-  const settings:any={};
-  for(const [key,max] of Object.entries({shopName:80,shippingDays:60,contactEmail:150,contactPhone:30,company:150,cui:30,companyAddress:300,returns:12000,terms:12000,privacy:12000}))settings[key]=clean(input[key]??'',key,max);
-  if(!Number.isInteger(input.shipping)||input.shipping<0||input.shipping>100000)throw new CommerceError('Cost de livrare invalid.');
-  settings.shipping=input.shipping;settings.checkoutOpen=input.checkoutOpen===true;
-  if(settings.checkoutOpen&&['shopName','shippingDays','contactEmail','contactPhone','company','cui','companyAddress','returns','terms','privacy'].some(key=>!settings[key]))throw new CommerceError('Completează datele de contact, firma și politicile înainte de activarea comenzilor.');
-  if(settings.contactEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.contactEmail))throw new CommerceError('Verifică emailul de contact.');
-  await db.prepare('INSERT INTO store_settings (id,value) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value').bind('store',JSON.stringify(settings)).run();
-  return json({settings});
+  return json({settings:await saveStoreSettings(input,db)});
 }
 
 export async function handleRequest(request:Request,options:Options={}){
@@ -148,7 +138,30 @@ export async function handleRequest(request:Request,options:Options={}){
       if(!['GET','HEAD'].includes(method))requireSameOrigin(request);
       const db=await getDatabase();
       if(path==='/api/admin/orders'){allowed(method,['GET']);return await orderList(url,db);}
-      if(/^\/api\/admin\/orders\/[^/]+$/.test(path)){allowed(method,['PATCH']);return json({order:await updateOrder(db,decodeURIComponent(path.split('/').pop()!),await jsonBody(request))});}
+      if(/^\/api\/admin\/orders\/[^/]+\/retry-email$/.test(path)){
+        allowed(method,['POST']);const input=await jsonBody(request);
+        if(input.confirmResend===true)await authorizeResend(db,decodeURIComponent(path.split('/')[4]),input.emailId);
+        const mail=await configuredMail(db,environment);
+        return json(await sendPendingForOrder(db,decodeURIComponent(path.split('/')[4]),mail,options.sendEmail||(mail.GMAIL_USER?gmailSender(mail):undefined)));
+      }
+      if(/^\/api\/admin\/orders\/[^/]+$/.test(path)){
+        allowed(method,['GET','PATCH']);const id=decodeURIComponent(path.split('/').pop()!);
+        if(method==='PATCH'){
+          await updateOrder(db,id,await jsonBody(request));
+          try{const mail=await configuredMail(db,environment);await sendPendingForOrder(db,id,mail,options.sendEmail||(mail.GMAIL_USER?gmailSender(mail):undefined));}catch{console.error('Shipment saved; email dispatch needs retry');}
+        }
+        return json(await orderDetail(db,id));
+      }
+      if(path==='/api/admin/readiness'){allowed(method,['GET']);return json({email:emailReadiness(await configuredMail(db,environment)),settings:await storeSettings(db)});}
+      if(path==='/api/admin/mail'){allowed(method,['PUT']);return json({email:await saveGmail(db,await jsonBody(request),environment)});}
+      if(path==='/api/admin/email-preview'){
+        allowed(method,['GET']);const settings=await storeSettings(db);
+        return html(shippingEmail({reference:'EP-DEMO-001',customer_name:'Alex',tracking:'7000158682653',items:[{name:'AirPods Pro 3',price:24900,quantity:1}],shipping:2499,total:27399,paid:false,city:'București',county:'București'},settings).html,200,{'X-Robots-Tag':'noindex, nofollow'});
+      }
+      if(path==='/api/admin/settings/demo'){
+        allowed(method,['POST']);await jsonBody(request);
+        return json({settings:await saveStoreSettings(await demoStoreSettings(db),db)});
+      }
       if(path==='/api/admin/export'){allowed(method,['GET']);return await exportOrders(url,db);}
       if(path==='/api/admin/products'){
         allowed(method,['GET','PATCH']);
@@ -174,7 +187,7 @@ export async function handleRequest(request:Request,options:Options={}){
     if(/^\/politici\/[^/]+$/.test(path)){
       allowed(method,['GET']);let settings=DEFAULT_SETTINGS;
       try{settings=await storeSettings(await getDatabase());}catch{/* Never invent policies when storage is unavailable. */}
-      return policyPage(decodeURIComponent(path.split('/').pop()!),settings);
+      return customerPage(decodeURIComponent(path.split('/').pop()!),settings);
     }
     return path.startsWith('/api/')?json({error:'Pagina nu există.'},404):html('<!doctype html><html lang="ro"><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>ElitePods — Pagina nu există</title><link rel="stylesheet" href="/admin.css"></head><body><main class="login-panel"><h1>Pagina nu există.</h1><a class="btn" href="/">Înapoi la magazin →</a></main></body></html>',404);
   }catch(error){

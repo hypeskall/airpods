@@ -1,5 +1,6 @@
-import { storeSettings,clean,CommerceError } from '../../../../lib/commerce';
-import { requireAdmin,database,response,failure,jsonBody } from '../../../../lib/http';
+import {storeSettings} from '../../../../lib/commerce';
+import {saveStoreSettings} from '../../../../lib/store-settings';
+import {requireAdmin,database,response,failure,jsonBody} from '../../../../lib/http';
 export const dynamic='force-dynamic';
 export async function GET(){try{await requireAdmin();return response({settings:await storeSettings(database())});}catch(e){return failure(e);}}
-export async function PUT(request:Request){try{await requireAdmin();const input=await jsonBody(request);const settings:any={};for(const [key,max] of Object.entries({shopName:80,shippingDays:60,contactEmail:150,contactPhone:30,company:150,cui:30,companyAddress:300,returns:12000,terms:12000,privacy:12000})){settings[key]=clean(input[key]??'',key,max);}if(!Number.isInteger(input.shipping)||input.shipping<0||input.shipping>100000)throw new CommerceError('Cost de livrare invalid.');settings.shipping=input.shipping;settings.checkoutOpen=input.checkoutOpen===true;if(settings.checkoutOpen&&['shopName','shippingDays','contactEmail','contactPhone','company','cui','companyAddress','returns','terms','privacy'].some(key=>!settings[key]))throw new CommerceError('Completează datele de contact, firma și politicile înainte de activarea comenzilor.');if(settings.contactEmail&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.contactEmail))throw new CommerceError('Verifică emailul de contact.');await database().prepare('INSERT INTO store_settings (id,value) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value').bind('store',JSON.stringify(settings)).run();return response({settings});}catch(e){return failure(e);}}
+export async function PUT(request:Request){try{await requireAdmin();return response({settings:await saveStoreSettings(await jsonBody(request),database())});}catch(e){return failure(e);}}

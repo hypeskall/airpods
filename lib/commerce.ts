@@ -1,3 +1,4 @@
+import {validEmail} from './fulfillment.ts';
 // All monetary values are integer bani. The browser never chooses an order price.
 export const DEFAULT_PRODUCTS = [
   { id: 'pro', name: 'AirPods Pro 3', price: 24900 },
@@ -7,10 +8,10 @@ export const DEFAULT_PRODUCTS = [
 export const DEFAULT_SETTINGS = {
   shipping: 2499, shippingDays: '1–3 zile', shopName: 'ElitePods',
   contactEmail: '', contactPhone: '', company: '', cui: '', companyAddress: '',
-  returns: '', terms: '', privacy: '', checkoutOpen: false,
+  returns: '', terms: '', privacy: '', checkoutOpen: false, demoData:false,
 };
 export const TRANSITIONS: Record<string,string[]> = {
-  new:['new','confirmed','cancelled'], confirmed:['confirmed','shipped','cancelled'],
+  new:['new','confirmed','shipped','cancelled'], confirmed:['confirmed','shipped','cancelled'],
   shipped:['shipped','delivered','returned'], delivered:['delivered','returned'],
   cancelled:['cancelled'], returned:['returned'],
 };
@@ -51,11 +52,11 @@ export function validateOrder(input:any){
   const c=input.customer||{};
   const customer={
     name:clean(c.name,'numele',100,3), phone:clean(c.phone,'telefonul',20,9).replace(/[ ()-]/g,''),
-    email:clean(c.email??'','emailul',150), county:clean(c.county,'județul',60,2),
+    email:clean(c.email??'','emailul',150,3), county:clean(c.county,'județul',60,2),
     city:clean(c.city,'localitatea',80,2), address:clean(c.address,'adresa',250,5), notes:clean(c.notes??'','observațiile',1000),
   };
   if(!/^(?:\+40|0040|0)[237]\d{8}$/.test(customer.phone))throw new CommerceError('Introdu un număr de telefon din România valid.');
-  if(customer.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email))throw new CommerceError('Verifică adresa de email.');
+  if(!validEmail(customer.email))throw new CommerceError('Verifică adresa de email pentru notificarea de expediere.');
   if(!Number.isInteger(input.expectedTotal)||input.expectedTotal<0)throw new CommerceError('Reîncarcă totalul comenzii.');
   if(input.acceptedTerms!==true)throw new CommerceError('Confirmă că ai citit condițiile comenzii.');
   return {key:input.idempotencyKey,items,customer,expectedTotal:input.expectedTotal};
@@ -103,9 +104,24 @@ export async function updateOrder(db:Database,id:string,input:any){
   const status=clean(input.status,'statusul',20,1);
   if(!TRANSITIONS[row.status]?.includes(status))throw new CommerceError('Tranziție de status invalidă.',409);
   if(typeof input.paid!=='boolean')throw new CommerceError('Verifică starea plății.');
-  const tracking=clean(input.tracking??'','AWB-ul',100);const note=clean(input.internalNote??'','nota internă',2000);
+  const tracking=clean(input.tracking??'','AWB-ul',32);const note=clean(input.internalNote??'','nota internă',2000);
+  if(tracking&&!/^\d{8,32}$/.test(tracking))throw new CommerceError('Introdu un AWB FAN Courier valid, format din 8–32 cifre.');
+  if(status==='shipped'&&!tracking)throw new CommerceError('Introdu AWB-ul înainte de a marca expedierea.');
+  const email=clean(input.email??row.email,'emailul clientului',150);
+  if(email&&!validEmail(email))throw new CommerceError('Verifică emailul clientului.');
+  const shipment=status==='shipped'&&(row.status!=='shipped'||tracking!==row.tracking||email!==row.email);
+  if(shipment&&!validEmail(email))throw new CommerceError('Completează emailul clientului pentru notificarea cu AWB.');
   const nextVersion=row.version+1;const now=new Date().toISOString();
-  const queries=[db.prepare('UPDATE orders SET status=?,paid=?,tracking=?,internal_note=?,updated_at=?,version=version+1 WHERE id=? AND version=?').bind(status,input.paid?1:0,tracking,note,now,id,row.version)];
+  const eventId=crypto.randomUUID();
+  const queries=[db.prepare('UPDATE orders SET status=?,paid=?,tracking=?,internal_note=?,email=?,updated_at=?,version=version+1 WHERE id=? AND version=?').bind(status,input.paid?1:0,tracking,note,email,now,id,row.version)];
+  const message=[row.status!==status?'Status: '+row.status+' → '+status:'Comandă actualizată',row.tracking!==tracking?'AWB: '+tracking:'',row.email!==email?'Email client actualizat':'',!!row.paid!==input.paid?(input.paid?'Plată marcată ca încasată':'Plată marcată de încasat'):''].filter(Boolean).join(' · ');
+  queries.push(db.prepare("INSERT INTO order_events(id,order_id,kind,message,created_at) SELECT ?,?,'update',?,? WHERE changes()=1 AND EXISTS(SELECT 1 FROM orders WHERE id=? AND version=?)").bind(eventId,id,message,now,id,nextVersion));
+  if(shipment){
+    const emailId=id+'-'+(await digest(tracking+'\n'+email)).slice(0,24);
+    const settings=await storeSettings(db);
+    const snapshot={order:{...decodeOrder(row),status,tracking,email,paid:input.paid},settings};
+    queries.push(db.prepare("INSERT OR IGNORE INTO shipping_emails(id,order_id,recipient,tracking,payload,state,error,created_at,updated_at) SELECT ?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM order_events WHERE id=?)").bind(emailId,id,email,tracking,JSON.stringify(snapshot),row.is_test?'skipped':'pending',row.is_test?'Test: nu se trimite email real.':'',now,now,eventId));
+  }
   if(status==='cancelled'&&row.status!=='cancelled'&&!row.is_test){
     for(const item of JSON.parse(row.items).filter((i:any)=>i.reservedStock))queries.push(db.prepare('UPDATE products SET stock=stock+?,version=version+1 WHERE id=? AND stock IS NOT NULL AND EXISTS(SELECT 1 FROM orders WHERE id=? AND version=? AND status=? AND inventory_restored=0)').bind(item.quantity,item.id,id,nextVersion,'cancelled'));
     queries.push(db.prepare('UPDATE orders SET inventory_restored=1 WHERE id=? AND version=? AND status=? AND inventory_restored=0').bind(id,nextVersion,'cancelled'));
