@@ -1,0 +1,56 @@
+/* A full-width surface shares the palette of the scene passing beneath it. */
+.header.wrap{max-width:none;width:100%;padding-inline:max(48px,calc((100% - 1304px)/2));background:#fdfdfdbd;border:0;box-shadow:none;backdrop-filter:blur(20px) saturate(145%);-webkit-backdrop-filter:blur(20px) saturate(145%);transition:background-color .5s ease,color .4s ease}
+.header.is-scrolled{box-shadow:none}
+.header.is-over-story{background:#10101378;color:#f4f4fa}
+.header .brand-mark img{transition:filter .4s ease}
+.header.is-over-story .brand-mark img{filter:brightness(0) invert(1)}
+.header.is-over-story .count{background:#f2f2fa;color:#202027}
+.header.is-over-story nav a{color:#dedee9}
+.header nav a{border-radius:999px;padding-inline:14px;transition:background .25s ease,color .25s ease}
+.header nav a:after{left:14px;right:14px}
+.header nav a:hover{background:#8080920c}
+.header.is-over-story nav a:hover{background:#ffffff0c;color:white}
+
+/* Refractive rims and broad highlights; blur stays on small, stationary surfaces. */
+.header .cart-toggle,.header .tracking-toggle,.header .search-toggle,.story-directions,.story-directions>button,.sound-story .story-cta,.sound-story .story-arrow,.collection .product-image>.image-arrow{border:1px solid #ffffffad;background:linear-gradient(145deg,#ffffffa8 0%,#f6f6ff40 45%,#ffffff79 100%);box-shadow:inset 0 1px 0 #ffffffe6,inset 0 -1px 0 #5d5d7910,0 3px 14px #1d1d3410;backdrop-filter:blur(12px) saturate(155%);-webkit-backdrop-filter:blur(12px) saturate(155%)}
+.header .search-toggle{border-color:transparent;background:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.header .search-toggle:hover{background:#ffffff7a;box-shadow:inset 0 1px 0 #fff,0 3px 14px #1d1d3410}
+.header.is-over-story .cart-toggle,.header.is-over-story .tracking-toggle{border-color:#ffffff26;background:linear-gradient(145deg,#ffffff1d,#ffffff07 54%,#ffffff12);box-shadow:inset 0 1px 0 #ffffff26,inset 0 -1px 0 #00000026,0 4px 16px #0000000d;color:#f1f1fa}
+.header.is-over-story .search-toggle:hover{background:#ffffff12;box-shadow:inset 0 1px 0 #ffffff26}
+.collection .add-button,.button.dark{position:relative;isolation:isolate;overflow:hidden;background:linear-gradient(150deg,#50505f 0%,#2b2b34 40%,#1c1c23 78%,#30303a 100%);border:1px solid #ffffff20;box-shadow:inset 0 1px 0 #ffffff40,inset 0 -1px 0 #00000055,0 5px 14px #21213018;color:#fff;transition:transform .3s var(--ease),box-shadow .3s ease,background .3s ease}
+.collection .add-button:before,.button.dark:before{content:'';position:absolute;left:3%;right:3%;top:0;height:50%;border-radius:inherit;background:linear-gradient(180deg,#ffffff14,transparent);pointer-events:none;z-index:-1}
+.collection .add-button:not(:disabled):hover,.button.dark:not(:disabled):hover{background:linear-gradient(150deg,#626273,#353541 45%,#25252f);box-shadow:inset 0 1px 0 #ffffff66,inset 0 -1px 0 #00000050,0 8px 24px #21213022;transform:translateY(-2px)}
+.collection .add-button:not(:disabled):active,.button.dark:not(:disabled):active{transform:translateY(0) scale(.975)}
+.sound-story .story-cta{width:fit-content;padding:7px 8px 7px 21px;gap:17px;border-radius:999px;color:#f8f8ff;background:linear-gradient(135deg,#ffffff15,#ffffff05 55%,#ffffff0d);border-color:#ffffff21;box-shadow:inset 0 1px 0 #ffffff26,0 8px 30px #00000016;transition:background .3s,box-shadow .3s,transform .3s var(--ease)}
+.sound-story .story-cta:hover{background:linear-gradient(135deg,#ffffff24,#ffffff0c);box-shadow:inset 0 1px 0 #ffffff40,0 8px 30px #00000026;transform:translateY(-2px)}
+.sound-story .story-arrow{border-color:#ffffff29;background:linear-gradient(145deg,#ffffff20,#ffffff08);box-shadow:inset 0 1px 0 #ffffff35;backdrop-filter:none;-webkit-backdrop-filter:none}
+
+/* Controls sit beside the product instead of at the bottom of the stage. */
+.story-directions{position:absolute;right:max(22px,calc((100% - 1400px)/2 + 20px));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;padding:7px;border-radius:999px;z-index:6;background:linear-gradient(145deg,#ffffff12,#ffffff03 50%,#ffffff0a);border-color:#ffffff1c;box-shadow:inset 0 1px 0 #ffffff24,inset 0 -1px 0 #00000036,0 12px 36px #00000022}
+.sound-story:not([data-carousel-ready]) .story-directions{display:none}
+.story-directions>button{width:50px;height:50px;min-width:44px;min-height:44px;padding:13px;color:#f5f5ff;border-color:#ffffff24;background:linear-gradient(150deg,#ffffff1c,#ffffff06 52%,#ffffff11);box-shadow:inset 0 1px 0 #ffffff33,inset 0 -1px 0 #00000029,0 3px 10px #00000012;backdrop-filter:none;-webkit-backdrop-filter:none;transition:transform .25s var(--ease),background .3s ease,box-shadow .3s ease}
+.story-directions>button:hover{color:white;background:linear-gradient(140deg,#ffffff35,#ffffff15);box-shadow:inset 0 1px 0 #ffffff66,0 4px 20px #00000024;transform:scale(1.06)}
+.story-directions>button:active{transform:scale(.94)}
+.story-directions>button:focus-visible{outline:2px solid #eeeefa;outline-offset:4px}
+.story-panorama{right:76px}
+.story-navigation{pointer-events:none}
+.story-models{pointer-events:auto}
+@media(min-width:800px){.story-navigation{bottom:35px}.sound-story .story-caption{right:0}.story-directions{top:51%}}
+@media(max-width:1100px) and (min-width:800px){.header.wrap{padding-inline:32px}.header nav{gap:8px}.header nav a{padding-inline:10px}.story-panorama{right:70px}.story-directions{right:16px}}
+@media(max-width:799px){
+ .header.wrap{padding-inline:20px}
+ .header .cart-toggle{border-color:transparent;padding:7px 9px}
+ .header .tracking-toggle{padding:8px 9px}
+ .story-panorama{right:0;bottom:102px}
+ .sound-story .story-image-motion{padding-left:22px;padding-right:76px;padding-bottom:12px}
+ .sound-story .story-caption{right:58px}
+ .story-directions{right:12px;top:72%;padding:5px;gap:7px;margin:0}
+ .story-directions>button{width:44px;height:44px;padding:11px}
+ .story-directions svg{width:19px;height:19px}
+ .story-navigation{bottom:23px;display:block;padding-inline:24px}
+ .story-models{width:100%}
+ .sound-story .story-cta{padding:5px 6px 5px 16px;gap:12px}
+}
+@media(max-width:799px) and (max-height:740px){.story-panorama{bottom:85px}.story-navigation{bottom:13px}.story-directions{top:77%}}
+@media(max-width:360px){.header.wrap{padding-inline:14px}.story-directions{right:9px}.sound-story .story-image-motion{padding-left:10px;padding-right:66px}}
+@supports not (backdrop-filter:blur(1px)){.header.wrap{background:#fdfdfdf2}.header.is-over-story{background:#141419f0}.story-directions{background:#2c2c38eb}}

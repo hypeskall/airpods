@@ -1,3 +1,4 @@
+import {initHeaderSurface} from './header-surface.js';
 import {campaignOffer,offerPriceMarkup} from './campaign-pricing.js';
 import {shippingQuote,shippingBenefit,shippingPolicy,cartRecommendation} from './shipping-rules.js';
 import {productContent} from './product-content.js';
@@ -152,3 +153,5 @@ all('dialog').forEach(d=>{
 $('#sort')?.addEventListener('change',renderProducts);$('#query').addEventListener('input',renderSearch);$('#year').textContent=new Date().getFullYear();
 async function init(){try{if(new URLSearchParams(location.search).get('test')==='1'){const session=await request('/api/admin/session');testMode=session.isAdmin;}await loadCatalog();initSiteMotion();}catch(e){const target=$('#products')||$('#product-offer');target.innerHTML='<div class="catalog-error"><p>'+esc(e.message)+'</p><button class="button dark" id="retry-catalog">Reîncearcă</button></div>';$('#retry-catalog').addEventListener('click',init);}}
 init();
+
+initHeaderSurface();

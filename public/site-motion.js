@@ -60,7 +60,7 @@ function startSiteMotion(){
   timeline.fromTo('.story-panorama',{y:35},{y:-28,ease:'none'},0)
    .fromTo('.story-orbit',{rotation:-20,scale:.85},{rotation:20,scale:1.15,ease:'none'},0)
    .fromTo('.story-progress>span',{scaleX:0},{scaleX:1,ease:'none'},0);
-  gsap.from('.story-scene-label,.story-navigation',{y:20,opacity:0,duration:.85,stagger:.1,ease:'power3.out',clearProps:'transform,opacity',immediateRender:false,scrollTrigger:{trigger:story,start:'top 65%',once:true}});
+  gsap.from('.story-scene-label,.story-navigation,.story-directions',{y:20,opacity:0,duration:.85,stagger:.1,ease:'power3.out',clearProps:'transform,opacity',immediateRender:false,scrollTrigger:{trigger:story,start:'top 65%',once:true}});
  }
  const progress=document.createElement('div');progress.className='reading-progress';progress.setAttribute('aria-hidden','true');document.body.prepend(progress);
  gsap.fromTo(progress,{scaleX:0},{scaleX:1,ease:'none',scrollTrigger:{start:0,end:'max',scrub:.2}});
