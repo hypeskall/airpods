@@ -1,0 +1,65 @@
+/* Autumn campaign: decorative only; catalog prices and checkout remain authoritative. */
+:root{--autumn-cream:#fcf8f2;--autumn-ink:#352923;--autumn-copper:#ad6039;--autumn-line:#e9ded0;--ink:var(--autumn-ink);--muted:#8b8077;--line:var(--autumn-line)}
+body{background:var(--autumn-cream);color:var(--autumn-ink)}
+.announcement{display:flex;justify-content:center;align-items:center;gap:30px;background:#51362a;color:#f8eee0;padding:10px 20px;font-size:10px;letter-spacing:.02em}
+.announcement-season{display:inline-flex;align-items:center;gap:8px;letter-spacing:.16em;font-weight:700;font-size:9px;color:#f3c791;white-space:nowrap}
+.announcement-season svg{height:16px;width:16px;stroke-width:1.3;fill:none}
+.announcement-delivery{color:#e1cfc0}
+.announcement-link{display:inline-flex;align-items:center;gap:12px;font-size:10px;color:#fff5e7;min-height:24px}
+.announcement-link svg{width:13px;height:13px;stroke-width:1.5}
+.header{background:#fcf8f2f5}.header .brand-mark img,.footer-main .brand-mark img{mix-blend-mode:multiply}.header .cart-toggle{border-color:#e5d8c8}.count{background:#543b2e}.header nav a:hover{color:var(--autumn-copper)}
+.icon-button:hover{background:#efe3d4}.reading-progress{background:linear-gradient(90deg,#6c3d27,#dba96a,#a45b36)}
+.store-banner{background:#f2eae0;color:#8d7b6b}
+.collection.wrap{padding-top:30px;isolation:isolate}
+.collection:before{content:'';position:absolute;z-index:-2;inset:-20px -4vw 0;pointer-events:none;background:radial-gradient(ellipse at 13% 22%,#edc99e27,transparent 37%),radial-gradient(ellipse at 92% 31%,#d8a16b1c,transparent 35%)}
+.collection-heading{margin-bottom:30px}.collection-heading h1{font-size:clamp(61px,6.4vw,90px);margin-top:18px;margin-bottom:18px;letter-spacing:-.071em}
+.season-pill{display:inline-flex;align-items:center;gap:9px;border:1px solid #dcc5a8;border-radius:999px;padding:7px 12px;background:#f6ecde;font-size:8px;letter-spacing:.15em;color:#95643e;font-weight:650}
+.season-pill svg{width:16px;height:16px;stroke:#a5693d;stroke-width:1.1}
+.season-pill:after{content:'';width:3px;height:3px;border-radius:50%;background:#c99c6a;order:1}.season-pill .season-year{order:2;color:#b39370;font-weight:500;letter-spacing:.04em}
+.collection-heading .chrome-type{background:linear-gradient(115deg,#8c4d2f 10%,#b7794d 46%,#ce9f66 70%,#925732 100%);background-clip:text;-webkit-background-clip:text;color:#aa6b40;-webkit-text-fill-color:transparent}
+.collection-heading .hero-summary{color:#8c7c6d}.hero-summary #starting-price{color:#a08a76}
+.autumn-scene{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.autumn-drift{display:block;position:absolute;width:94px;height:110px;opacity:.82;transform-origin:center;pointer-events:none}
+.autumn-drift img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(5px 10px 9px #6b3d201b)}
+.autumn-drift:nth-child(1){top:60px;left:3%;width:103px;transform:rotate(-27deg)}
+.autumn-drift:nth-child(2){top:33px;right:6%;width:66px;height:100px;transform:rotate(31deg);opacity:.7}
+.autumn-drift:nth-child(3){top:228px;right:1%;width:49px;height:66px;transform:rotate(104deg);opacity:.36}
+.autumn-drift:nth-child(4){bottom:15px;left:22%;width:42px;height:58px;transform:rotate(-71deg);opacity:.45}
+#products{position:relative;z-index:1}
+.collection .product-card{background:#f2eade;border-color:#e8dac8;box-shadow:0 4px 20px #81572b03}
+.collection .model-pro{background:#eedfcf;border-color:#dfc9af}
+.collection .model-max{background:#e9e5de;border-color:#dcd5c9}
+.collection .product-card:hover{border-color:#c4a17f;box-shadow:0 16px 48px #6c47240d}
+.model-topline{color:#9b8672}.model-dot{background:#c4a37d}.model-pro .model-dot{background:#a06b43;box-shadow:0 0 0 4px #ddc7ae}
+.collection .product-image>.scene-halo{background:radial-gradient(ellipse,#e5c69d77 0%,#f6edde00 68%)}
+.collection .model-pro .scene-halo{background:radial-gradient(ellipse,#d2ae8799 0%,#f1e2d100 69%)}
+.collection .model-max .scene-halo{background:radial-gradient(ellipse,#cfbda188 0%,#ebe4d900 69%)}
+.collection .product-image>.scene-orbit{border-color:#c9ad8c38}.collection .product-image>.orbit-two{border-color:#bca48235}
+.collection .product-image>.scene-word{color:#c4a68120}
+.collection .product-image:after{content:'';position:absolute;right:12px;top:8px;width:65px;height:84px;background:url('/assets/autumn-leaf.svg') center/contain no-repeat;opacity:.24;transform:rotate(35deg);pointer-events:none;z-index:-1}
+.collection .model-pro .product-image:after{background-image:url('/assets/autumn-maple.svg');width:86px;transform:rotate(-23deg);opacity:.26}
+.collection .model-max .product-image:after{transform:rotate(65deg);opacity:.2}
+.collection .product-image>.image-arrow{background:#fffaf0c9;border-color:#fff9ef;color:#8e6947}
+.collection .product-meta{background:linear-gradient(180deg,#fffdf900,#fffdf940)}
+.collection .product-tag{color:#947b62}.collection .product-meta>p{color:#947f6c}.collection .details-link{color:#9d826a}
+.collection .add-button{background:#65442f}.collection .add-button:not(:disabled):hover{background:#8e5a37}
+.dark{background:#5c3e2b}.dark:not(:disabled):hover{background:#805237}
+.hero-bottom .purchase-facts,.scroll-cue{color:#9d8973}.scroll-cue-icon{border-color:#dcc6ac;color:#8f633d}.collection-stamp{color:#b49b81}.collection-tools{color:#9d8973}
+.collection-tools .filters button.active{background:#65442f;color:#fff}
+.sound-story .story-stage{background:radial-gradient(ellipse at 74% 45%,#74503a 0%,#34261e 44%,#211b17 80%)}
+.sound-story .story-word{color:#cead8150}.sound-story .story-copy h2 span:last-child{color:#d6b28b}.sound-story .story-copy>p{color:#b7a394}.sound-story .story-kicker,.sound-story .story-scene-label{color:#b9a089}.sound-story .story-orbit{border-color:#d8b08713}.sound-story .story-grid{opacity:.55}.sound-story .story-caption{color:#b89e87}
+.sound-story .story-models>button.is-active>i,.sound-story .story-progress>span{background:#e0ba85}.sound-story .story-models>button{color:#a88c76;border-color:#dbc1a322}.sound-story .story-models>button>span{color:#a88c76}.sound-story .story-models>button.is-active,.sound-story .story-models>button.is-active>span{color:#faead5}.sound-story .story-directions>button{border-color:#d9b58d45;color:#efd5b5}
+.comparison-grid article.comparison-card{background:#faf4eb;border-color:#e9dece}.comparison-image{background:#f0e6d8}.comparison-grid .comparison-copy>small{color:#a18260}.comparison-copy .text-link{color:#a4774f}
+.reassurance li:before,.eyebrow,.faq-list summary:after{color:#a6835f}.section{border-color:#e9dfd1}.reassurance li:after{border-color:#eadbc8}.faq-list details{border-color:#e9dfd1}
+.product-visual{background:radial-gradient(ellipse at 50% 40%,#f2dfc8,#f3ebdf 73%);border-color:#e9d8c0}.spec-highlights>div,.compatibility-box{background:#f5ece0;border-color:#e6d8c6}.product-purchase>.eyebrow{color:#a67a51}
+.cart-dialog,.checkout-dialog,.search-dialog{background:#fffcf7}.cart-item img{background:#f2e9dc}.payment-option,.payment-assurance{border-color:#dfcfb9}.mobile-buybar{background:#fffcf7ed;border-color:#e6d8c5}footer{border-color:#e4d7c6}.footer-main>a:last-child{border-color:#e4d7c6}.footer-main .logo{color:#5f4330}
+@media(min-width:1600px){.autumn-drift:nth-child(1){left:7%}.autumn-drift:nth-child(2){right:10%}}
+@media(max-width:799px){
+ .announcement{justify-content:space-between;gap:12px;padding:7px 18px}.announcement-season{font-size:8px;gap:6px}.announcement-season svg{width:13px;height:13px}.announcement-delivery{display:none}.announcement-link{font-size:8px;gap:9px}
+ .collection.wrap{padding-top:22px}.collection-heading{margin-bottom:26px}.collection-heading h1{font-size:46px;line-height:1.04;margin:17px -8px 14px;letter-spacing:-.071em}.season-pill{font-size:7px;padding:5px 9px;gap:7px}.season-pill svg{width:14px;height:14px}.collection-heading .hero-summary{font-size:10px;line-height:1.8}.hero-summary #starting-price{font-size:9px}
+ .autumn-drift:nth-child(1){width:40px;height:51px;left:0;top:28px;opacity:.65}.autumn-drift:nth-child(2){width:35px;height:52px;right:1%;top:70px;opacity:.58}.autumn-drift:nth-child(3){display:none}.autumn-drift:nth-child(4){left:16%;bottom:38px;width:28px;height:35px;opacity:.3}
+ .collection .product-card{border-radius:17px}.collection .product-image:after{width:28px;height:40px;right:3px;top:0;opacity:.2}.collection .model-pro .product-image:after{width:37px;height:43px}.collection .model-topline{color:#a48c75}.collection .add-button{min-height:44px;font-size:8px}.collection .details-link{min-height:40px}
+ .sound-story .story-stage{background:radial-gradient(ellipse at 64% 60%,#795339,#34261e 45%,#211b17 82%)}
+}
+@media(min-width:540px) and (max-width:799px){.collection-heading h1{font-size:66px}.autumn-drift:nth-child(1){width:65px;height:80px;left:5%}.autumn-drift:nth-child(2){right:5%;width:48px;height:70px}}
+@media(max-width:360px){.collection-heading h1{font-size:41px}.announcement{padding-inline:13px}.announcement-season{font-size:7px}.announcement-link{font-size:7px}}

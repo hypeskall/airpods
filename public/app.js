@@ -32,7 +32,7 @@ async function loadCatalog(){
  const data=catalogBootstrap||await request('/api/catalog');catalogBootstrap=null;settings=data.settings;
  products=productContent.map(p=>({...p,...data.products.find(row=>row.id===p.id)})).filter(p=>p.name);
  const banner=$('#store-banner');banner.hidden=settings.checkoutOpen&&!testMode;banner.textContent=testMode?'MOD TEST ADMINISTRATOR · Comenzile nu se expediază și nu reduc stocul.':'Magazin în pregătire · Comenzile sunt momentan închise.';
- $('.announcement').textContent='Plată la livrare · Livrare în '+settings.shippingDays+' · Transport '+money(settings.shipping);
+ $('.announcement-delivery').textContent='Plată la livrare · Livrare în '+settings.shippingDays+' · Transport '+money(settings.shipping);
  all('.delivery-fact').forEach(el=>el.textContent='Livrare în '+settings.shippingDays);
  $('#store-contact').textContent=[settings.company,settings.cui?'CUI '+settings.cui:'',settings.companyAddress,settings.contactEmail,settings.contactPhone].filter(Boolean).join(' · ');
  if($('#shipping-answer'))$('#shipping-answer').textContent='Transportul este '+money(settings.shipping)+' per comandă. Totalul produselor și al livrării este afișat în coș și înainte de confirmare. Plata este ramburs.';
