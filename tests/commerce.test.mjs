@@ -36,6 +36,37 @@ test('a retry creates one order and reserves stock once',async()=>{
  assert.equal(db.sql.prepare('SELECT COUNT(*) AS n FROM orders').get().n,1);
  await assert.rejects(placeOrder(db,{...body,customer:{...body.customer,name:'Different Client'}}),/deja folosită/);
 });
+
+test('server grants two-pair shipping and saves its exact charge; removal cannot keep the free fee',async()=>{
+ const db=database();await catalog(db);db.sql.prepare('UPDATE products SET stock=4 WHERE id=?').run('four');
+ const body=input({items:[{id:'four',quantity:2}],expectedTotal:39800});
+ const receipt=await placeOrder(db,body);assert.equal(receipt.shipping,0);assert.equal(receipt.total,39800);
+ const row=db.sql.prepare('SELECT shipping,total FROM orders WHERE id=?').get(body.idempotencyKey);
+ assert.equal(row.shipping,0);assert.equal(row.total,39800);
+ assert.equal(db.sql.prepare('SELECT stock FROM products WHERE id=?').get('four').stock,2);
+ await assert.rejects(placeOrder(db,input({items:[{id:'four',quantity:1}],expectedTotal:19900,shipping:0})),/Prețul/);
+ const mixed=await placeOrder(db,input({items:[{id:'four',quantity:1},{id:'pro',quantity:1}],expectedTotal:44800}));assert.equal(mixed.shipping,0);
+ // A later policy change must not reprice the original order or a safe retry.
+ db.sql.prepare('INSERT INTO store_settings(id,value) VALUES (?,?)').run('store',JSON.stringify({shipping:2499,freeShippingMode:'off'}));
+ const retry=await placeOrder(db,body);assert.equal(retry.reference,receipt.reference);assert.equal(retry.shipping,0);
+ await assert.rejects(placeOrder(db,input({items:[{id:'pro',quantity:2}],expectedTotal:49800})),/Prețul/);
+});
+
+test('server applies a spend threshold to live prices and rejects stale shipping quotes',async()=>{
+ const db=database();await catalog(db);
+ db.sql.prepare('INSERT INTO store_settings(id,value) VALUES (?,?)').run('store',JSON.stringify({shipping:2499,freeShippingMode:'amount',freeShippingThreshold:49900}));
+ const below=await placeOrder(db,input({items:[{id:'pro',quantity:2}],expectedTotal:52299}));assert.equal(below.shipping,2499);
+ db.sql.prepare('UPDATE products SET price=? WHERE id=?').run(24950,'pro');
+ const at=await placeOrder(db,input({items:[{id:'pro',quantity:2}],expectedTotal:49900}));assert.equal(at.shipping,0);
+ await assert.rejects(placeOrder(db,input({items:[{id:'pro',quantity:2}],expectedTotal:52399})),/Prețul/);
+});
+
+test('admin shipping rules reject invalid modes and fractional thresholds',()=>{
+ const base={shipping:2499};
+ assert.equal(validateSettings(base).freeShippingQuantity,2);
+ for(const value of [{freeShippingMode:'anything'},{freeShippingQuantity:1},{freeShippingQuantity:2.5},{freeShippingThreshold:0},{freeShippingThreshold:199.5},{cartRecommendation:'true'}])assert.throws(()=>validateSettings({...base,...value}),/invalid/);
+ assert.equal(validateSettings({...base,freeShippingMode:'off',cartRecommendation:false}).cartRecommendation,false);
+});
 test('two customers cannot reserve the same final unit',async()=>{
  const db=database();await catalog(db);db.sql.prepare('UPDATE products SET stock=1 WHERE id=?').run('pro');
  const result=await Promise.allSettled([placeOrder(db,input()),placeOrder(db,input())]);

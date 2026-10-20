@@ -2,6 +2,7 @@ import shell from '../storefront/index.html?raw';
 import trackingContent from '../storefront/tracking.html?raw';
 import {productContent,productSpecs} from '../public/product-content.js';
 import {productCard} from '../public/product-card.js';
+import {shippingBenefit,shippingPolicy} from '../public/shipping-rules.js';
 export function esc(value:unknown){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));}
 export function storefront(content?:string,id?:string,catalogData?:{products:any[];settings:any},pageTitle?:string,stylesheet?:string){
  let html=content?shell.replace(/<!-- CONTENT_START -->[\s\S]*<!-- CONTENT_END -->/,content):shell;
@@ -9,7 +10,11 @@ export function storefront(content?:string,id?:string,catalogData?:{products:any
   const models=['four','pro','max'].map(id=>{const visual=productContent.find(p=>p.id===id)!;const live=catalogData?.products.find(p=>p.id===id);return {...visual,...live};});
   html=html.replace('<!-- PRODUCT_CARDS -->',models.map(p=>productCard(p,{pending:!catalogData})).join(''));
  }
- if(catalogData)html=html.replace('</body>',`<script type="application/json" id="catalog-bootstrap">${JSON.stringify(catalogData).replaceAll('<','\\u003c')}</script></body>`);
+ if(catalogData){
+  html=html.replace(/(<span class="announcement-campaign">)[\s\S]*?(<\/span>)/,`$1${esc(shippingBenefit(catalogData.settings))}$2`);
+  html=html.replace(/(<p class="collection-shipping" data-shipping-policy>)[\s\S]*?(<\/p>)/,`$1${esc(shippingPolicy(catalogData.settings))}$2`);
+  html=html.replace('</body>',`<script type="application/json" id="catalog-bootstrap">${JSON.stringify(catalogData).replaceAll('<','\\u003c')}</script></body>`);
+ }
  if(id){const p=productContent.find(p=>p.id===id)!;html=html.replace('<body>',`<body data-product="${id}">`).replace('<title>ElitePods — Alege-ți AirPods.</title>',`<title>${esc(p.displayName)} — ElitePods</title>`);}
  if(pageTitle)html=html.replace(/<title>[^<]*<\/title>/,`<title>${esc(pageTitle)}</title>`);
  if(stylesheet)html=html.replace('</head>',`<link rel="stylesheet" href="${esc(stylesheet)}"></head>`);

@@ -15,6 +15,6 @@ test('unknown products, invalid amounts and prices at or above the reference can
 });
 test('SSR product cards and hydrated prices share the same truthful reference and savings',()=>{
  const product={id:'pro',displayName:'AirPods Pro 3',price:24900,stock:null,active:1,image:'/assets/airpods-pro-3.png'};
- const markup=productCard(product);assert.match(markup,/<s>379 lei<\/s>/);assert.match(markup,/Economisești 130 lei/);assert.match(markup,/Reducere 34%/);assert.match(markup,/249 lei/);
+ const markup=productCard(product);assert.match(markup,/<s>379 lei<\/s>/);assert.doesNotMatch(markup,/Economisești|sale-saving/);assert.match(markup,/Reducere 34%/);assert.match(markup,/249 lei/);
  assert.ok(!productCard(product,{pending:true}).includes('Reducere 34%'));
 });

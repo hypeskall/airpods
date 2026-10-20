@@ -48,7 +48,6 @@ function startSiteMotion(){
  started=true;gsap.registerPlugin(ScrollTrigger);
  ScrollTrigger.config({ignoreMobileResize:true});
  gsap.from('.hero-eyebrow,.headline-line,.hero-summary',{y:32,opacity:0,duration:1,ease:'power3.out',stagger:.1,clearProps:'transform,opacity'});
- if(document.querySelector('.sale-pill'))gsap.from('.sale-pill',{y:12,opacity:0,duration:.8,ease:'power3.out',clearProps:'transform,opacity'});
  if(document.querySelector('.product-layout')){
   gsap.from('.product-visual',{y:30,opacity:0,duration:.9,ease:'power3.out',clearProps:'transform,opacity'});
   gsap.from('.product-purchase>.eyebrow,.product-purchase h1,.product-lead,#product-offer',{y:22,opacity:0,duration:.75,stagger:.07,ease:'power3.out',clearProps:'transform,opacity'});

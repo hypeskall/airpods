@@ -12,5 +12,5 @@ export function offerPriceMarkup(product,{pending=false,context='card'}={}){
  const deal=pending?null:campaignOffer(product);
  const current=pending?'—':money(product.price);
  if(!deal)return `<div class="sale-price-group"><strong class="price">${current}</strong></div>`;
- return `<div class="sale-price-group has-offer"><span class="sale-previous"><span class="sr-only">Preț anterior: </span><s>${money(deal.previous)}</s></span><strong class="price"><span class="sr-only">Preț actual: </span>${current}</strong>${context==='compact'?'':`<small class="sale-saving">Economisești ${money(deal.saving)}</small>`}</div>`;
+ return `<div class="sale-price-group has-offer"><span class="sale-previous"><span class="sr-only">Preț anterior: </span><s>${money(deal.previous)}</s></span><strong class="price"><span class="sr-only">Preț actual: </span>${current}</strong></div>`;
 }

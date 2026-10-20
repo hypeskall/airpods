@@ -1,4 +1,5 @@
 import {validEmail} from './fulfillment.ts';
+import {DEFAULT_SHIPPING_RULE,shippingQuote} from '../public/shipping-rules.js';
 // All monetary values are integer bani. The browser never chooses an order price.
 export const DEFAULT_PRODUCTS = [
   { id: 'pro', name: 'AirPods Pro 3', price: 24900 },
@@ -6,6 +7,7 @@ export const DEFAULT_PRODUCTS = [
   { id: 'max', name: 'AirPods Max', price: 39900 },
 ];
 export const DEFAULT_SETTINGS = {
+  ...DEFAULT_SHIPPING_RULE,
   shipping: 2499, shippingDays: '1–3 zile', shopName: 'ElitePods',
   contactEmail: '', contactPhone: '', company: '', cui: '', companyAddress: '',
   returns: '', terms: '', privacy: '', checkoutOpen: false, demoData:false,
@@ -75,7 +77,8 @@ export async function placeOrder(db:Database,input:any,isTest=false){
     subtotal+=p.price*i.quantity;
     return {id:p.id,name:p.name,price:p.price,quantity:i.quantity,reservedStock:!isTest&&p.stock!==null,version:p.version};
   });
-  const shipping=settings.shipping;const total=subtotal+shipping;
+  const quantity=items.reduce((sum:number,item:any)=>sum+item.quantity,0);
+  const shipping=shippingQuote(settings,subtotal,quantity).shipping;const total=subtotal+shipping;
   if(total!==valid.expectedTotal)throw new CommerceError('Prețul sau livrarea s-a modificat. Verifică totalul actualizat.',409);
   const now=new Date().toISOString();const reference='EP-'+now.slice(0,10).replaceAll('-','')+'-'+crypto.randomUUID().slice(0,8).toUpperCase();
   const c=valid.customer;
