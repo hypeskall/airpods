@@ -51,6 +51,7 @@ function startSiteMotion(){
  const autumn=document.querySelector('.autumn-scene');
  if(autumn){
   gsap.from('.season-pill',{y:12,opacity:0,duration:.9,ease:'power3.out',clearProps:'transform,opacity'});
+  gsap.from('.sale-seal',{scale:.8,rotation:-9,opacity:0,duration:1.15,delay:.2,ease:'back.out(1.4)',clearProps:'transform,opacity'});
   select('.autumn-drift',autumn).forEach((leaf,index)=>{
    const drift=gsap.to(leaf.querySelector('img'),{y:index%2?-9:12,rotation:index%2?9:-10,duration:4.5+index*.7,repeat:-1,yoyo:true,ease:'sine.inOut',paused:true});
    ScrollTrigger.create({trigger:autumn,start:'top bottom',end:'bottom top',onEnter:()=>drift.play(),onEnterBack:()=>drift.play(),onLeave:()=>drift.pause(),onLeaveBack:()=>drift.pause()});
