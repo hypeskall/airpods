@@ -89,6 +89,11 @@ export async function placeOrder(db:Database,input:any,isTest=false){
   // conditional INSERT affected zero rows. Only the original product version
   // may reserve stock, preventing that retry from decrementing it again.
   const statements=[insert,...items.filter((i:any)=>i.reservedStock).map((i:any)=>db.prepare('UPDATE products SET stock=stock-?,version=version+1 WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM orders WHERE id=?)').bind(i.quantity,i.id,i.version,valid.key))];
+  // The receipt and accepted policy snapshot are committed with the order, before SMTP.
+  if(!isTest){
+    const snapshot={kind:'receipt',order:{id:valid.key,reference,customer_name:c.name,phone:c.phone,email:c.email,address:c.address,city:c.city,county:c.county,items,subtotal,shipping,total,created_at:now},settings};
+    statements.push(db.prepare("INSERT OR IGNORE INTO shipping_emails(id,order_id,recipient,tracking,payload,state,error,created_at,updated_at) SELECT ?,?,?,'',?,'pending','',?,? WHERE EXISTS(SELECT 1 FROM orders WHERE id=? AND fingerprint=?)").bind('receipt/'+valid.key,valid.key,c.email,JSON.stringify(snapshot),now,now,valid.key,fingerprint));
+  }
   try{
     const result=await db.batch(statements);
     if(result[0].meta.changes!==1)throw new CommerceError('Stocul s-a modificat. Actualizează produsele și încearcă din nou.',409);

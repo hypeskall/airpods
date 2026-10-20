@@ -182,3 +182,20 @@ test('bundled Node function serves real HTTP responses and preserves the request
   const anonymous=await fetch(origin+'/api/admin/orders',{headers:{'x-forwarded-proto':'http'}});
   assert.equal(anonymous.status,403);assert.equal(anonymous.headers.get('cache-control'),'no-store');
 });
+
+
+test('public live purchase queues one receipt, then an authenticated shipment sends the AWB to its buyer',async()=>{
+ const h=harness();await migrateDatabase(h.client);const messages=[];
+ const options={db:h.db,environment:{...environment,GMAIL_USER:'store@gmail.com',GMAIL_APP_PASSWORD:'test-only-password'},sendEmail:async(_url,init)=>{messages.push(JSON.parse(init.body));return Response.json({id:'message-'+messages.length});}};
+ h.sql.prepare('INSERT INTO store_settings(id,value) VALUES (?,?)').run('store',JSON.stringify({checkoutOpen:true,shipping:2499,demoData:false,contactEmail:'contact@merchant.ro',terms:'Accepted purchase terms'}));
+ const body=input(),first=await handleRequest(request('/api/orders',{method:'POST',body}),options);assert.equal(first.status,201);
+ const receipt=(await first.json()).order;assert.match(receipt.reference,/^EP-/);assert.equal(messages.length,1);assert.deepEqual(messages[0].to,['client@example.com']);assert.match(messages[0].text,/Accepted purchase terms/);
+ assert.equal((await handleRequest(request('/api/orders',{method:'POST',body}),options)).status,201);assert.equal(messages.length,1);
+ const endpoint='/api/admin/orders/'+body.idempotencyKey;
+ const shipped=await handleRequest(request(endpoint,{method:'PATCH',cookie:cookie(),body:{version:1,status:'shipped',paid:false,tracking:'7000158682653',internalNote:'TEST'}}),options);
+ assert.equal(shipped.status,200);assert.equal(messages.length,2);assert.match(messages[1].html,/tracking=7000158682653/);assert.ok((await shipped.json()).emails.every(e=>e.state==='sent'));
+ assert.equal((await handleRequest(request('/api/admin/mail/test',{method:'POST',body:{}}),options)).status,403);
+ assert.equal((await handleRequest(request('/api/admin/mail/test',{method:'POST',cookie:cookie(),body:{recipient:'attacker@example.com'}}),options)).status,200);
+ assert.deepEqual(messages[2].to,['store@gmail.com']);assert.match(messages[2].subject,/TEST/);
+ assert.equal((await handleRequest(request('/api/admin/mail/test',{method:'POST',cookie:cookie(),body:{},headers:{origin:'https://attacker.example'}}),options)).status,403);
+});

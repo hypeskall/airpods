@@ -130,7 +130,9 @@ export async function handleRequest(request:Request,options:Options={}){
       if(test)requireAdministrator(request,environment,options.now);
       const settings=await storeSettings(db);
       if(!test&&!settings.checkoutOpen)throw new CommerceError('Magazinul nu primește încă comenzi. Revino în curând.',503);
-      return json({order:await placeOrder(db,input,test)},201);
+      const order=await placeOrder(db,input,test);
+      if(!test){try{const mail=await configuredMail(db,environment);await sendPendingForOrder(db,input.idempotencyKey,mail,options.sendEmail||(mail.GMAIL_USER?gmailSender(mail):undefined));}catch{console.error('Order saved; receipt email needs retry');}}
+      return json({order},201);
     }
     if(path.startsWith('/api/admin/')){
       requireAdministrator(request,environment,options.now);
@@ -154,6 +156,17 @@ export async function handleRequest(request:Request,options:Options={}){
       }
       if(path==='/api/admin/readiness'){allowed(method,['GET']);return json({email:emailReadiness(await configuredMail(db,environment)),settings:await storeSettings(db)});}
       if(path==='/api/admin/mail'){allowed(method,['PUT']);return json({email:await saveGmail(db,await jsonBody(request),environment)});}
+      if(path==='/api/admin/mail/test'){
+        allowed(method,['POST']);await jsonBody(request);await limit(request,db,environment,'mail-test',3,options.now);
+        const mail=await configuredMail(db,environment),ready=emailReadiness(mail);
+        if(!ready.configured||!mail.GMAIL_USER)throw new CommerceError('Conectează mai întâi Gmail.');
+        const settings=await storeSettings(db),sample=shippingEmail({reference:'EP-TEST-EMAIL',customer_name:'Echipa ElitePods',tracking:'0000000000000',items:[{name:'AirPods Pro 3 · EXEMPLU',price:24900,quantity:1}],shipping:2499,total:27399,paid:false,city:'Oradea',county:'Bihor'},settings);
+        const id=crypto.randomUUID(),send=options.sendEmail||gmailSender(mail);
+        const response=await send('https://api.resend.com/emails',{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':'test/'+id},body:JSON.stringify({to:[mail.GMAIL_USER],subject:'[TEST] Șablon AWB ElitePods',html:sample.html.replace(/(<body[^>]*>)/,'$1<p style="padding:20px;text-align:center;font-family:Arial;color:#8a4b18">TEST · Date demonstrative. Nu reprezintă o expediere reală.</p>'),text:'TEST · Date demonstrative. Nu reprezintă o expediere reală.\n\n'+sample.text,reply_to:settings.contactEmail})});
+        const result:any=await response.json().catch(()=>({}));
+        if(!response.ok||!result.id)throw new CommerceError('Trimiterea nu a fost confirmată. Verifică folderul Trimise din Gmail înainte de a reîncerca.',503);
+        return json({ok:true,recipient:mail.GMAIL_USER});
+      }
       if(path==='/api/admin/email-preview'){
         allowed(method,['GET']);const settings=await storeSettings(db);
         return html(shippingEmail({reference:'EP-DEMO-001',customer_name:'Alex',tracking:'7000158682653',items:[{name:'AirPods Pro 3',price:24900,quantity:1}],shipping:2499,total:27399,paid:false,city:'București',county:'București'},settings).html,200,{'X-Robots-Tag':'noindex, nofollow'});

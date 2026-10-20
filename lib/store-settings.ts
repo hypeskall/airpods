@@ -16,8 +16,8 @@ export function validateSettings(input:any){
   }
   if(input.cartRecommendation!==undefined&&typeof input.cartRecommendation!=='boolean')throw new CommerceError('Opțiune de recomandare invalidă.');
   settings.cartRecommendation=input.cartRecommendation??DEFAULT_SHIPPING_RULE.cartRecommendation;
-  if(settings.checkoutOpen&&(['shopName','shippingDays','contactEmail','contactPhone','company','companyAddress','returns','terms','privacy'].some(key=>!settings[key])||(settings.sellerType==='business'&&!settings.cui)))throw new CommerceError('Completează contactul, identitatea vânzătorului și politicile înainte de activarea comenzilor.');
-  if(settings.checkoutOpen&&(settings.demoData||Object.values(settings).some(value=>typeof value==='string'&&/DE COMPLETAT|\.example\b|DEMONSTRATIV/i.test(value))))throw new CommerceError('Înlocuiește datele demonstrative și textele marcate DE COMPLETAT înainte de activarea comenzilor.');
+  if(settings.checkoutOpen&&(['shopName','shippingDays','contactEmail','contactPhone','company','companyAddress'].some(key=>!settings[key])||(settings.sellerType==='business'&&!settings.cui)))throw new CommerceError('Completează contactul și identitatea vânzătorului înainte de activarea comenzilor.');
+  if(settings.checkoutOpen&&(settings.demoData||['company','cui','companyAddress','contactEmail','contactPhone'].some(key=>/DE COMPLETAT|\.example\b|DEMONSTRATIV/i.test(settings[key]))))throw new CommerceError('Dezactivează modul de pregătire și înlocuiește datele de contact demonstrative înainte de activarea comenzilor.');
   if(settings.contactEmail&&!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(settings.contactEmail))throw new CommerceError('Verifică emailul de contact.');
   return settings;
 }
@@ -26,7 +26,7 @@ export async function saveStoreSettings(input:any,db:any){
   await db.prepare('INSERT INTO store_settings (id,value) VALUES (?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value').bind('store',JSON.stringify(settings)).run();
   return settings;
 }
-/** Drafts are explicit and may never open live checkout. Replace every marked field. */
+/** Optional starting drafts; publication and review are managed by the store owner. */
 export function policyDrafts(settings:any){
   const company=settings.company||'[DE COMPLETAT: denumirea firmei]',address=settings.companyAddress||'[DE COMPLETAT: sediul firmei]',email=settings.contactEmail||'[DE COMPLETAT: email]',phone=settings.contactPhone||'[DE COMPLETAT: telefon]',cui=settings.cui||'[DE COMPLETAT: CUI]';
   const individual=settings.sellerType==='individual';

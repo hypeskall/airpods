@@ -113,18 +113,18 @@ test('catalog browsing is read-only after seeding and repairs missing models wit
 
 const mailEnvironment={RESEND_API_KEY:'test-key',EMAIL_FROM:'ElitePods <orders@example.com>'};
 const edit=(version=1,overrides={})=>({version,status:'shipped',tracking:'7000158682653',paid:false,internalNote:'',...overrides});
-async function shipment(isTest=false){const db=database(),body=input();await placeOrder(db,body,isTest);await updateOrder(db,body.idempotencyKey,edit());return {db,id:body.idempotencyKey};}
+async function shipment(isTest=false){const db=database(),body=input();await placeOrder(db,body,isTest);db.sql.prepare("DELETE FROM shipping_emails WHERE id LIKE 'receipt/%'").run();await updateOrder(db,body.idempotencyKey,edit());return {db,id:body.idempotencyKey};}
 test('shipping requires an AWB and email; a valid shipment atomically queues one notification and history event',async()=>{
  const db=database(),body=input();await placeOrder(db,body);
  for(const tracking of ['', 'abc123','123'])await assert.rejects(updateOrder(db,body.idempotencyKey,edit(1,{tracking})),/AWB/);
  await assert.rejects(updateOrder(db,body.idempotencyKey,edit(1,{email:''})),/email/);
  assert.equal(db.sql.prepare('SELECT status FROM orders').get().status,'new');
  await updateOrder(db,body.idempotencyKey,edit());
- let detail=await orderDetail(db,body.idempotencyKey);assert.equal(detail.order.status,'shipped');assert.equal(detail.events.length,1);assert.equal(detail.emails.length,1);assert.equal(detail.emails[0].state,'pending');
+ let detail=await orderDetail(db,body.idempotencyKey);assert.equal(detail.order.status,'shipped');assert.equal(detail.events.length,1);assert.equal(detail.emails.filter(e=>e.kind==='shipping').length,1);assert.equal(detail.emails.find(e=>e.kind==='shipping').state,'pending');
  await updateOrder(db,body.idempotencyKey,edit(2));
- detail=await orderDetail(db,body.idempotencyKey);assert.equal(detail.emails.length,1);
+ detail=await orderDetail(db,body.idempotencyKey);assert.equal(detail.emails.filter(e=>e.kind==='shipping').length,1);
  await assert.rejects(updateOrder(db,body.idempotencyKey,edit(1,{tracking:'7000158682654'})),/modificată/);
- assert.equal((await orderDetail(db,body.idempotencyKey)).emails.length,1);
+ assert.equal((await orderDetail(db,body.idempotencyKey)).emails.filter(e=>e.kind==='shipping').length,1);
 });
 test('provider acceptance is persisted; parallel retries and repeated saves do not send duplicate email',async()=>{
  const {db,id}=await shipment();let sends=0;
@@ -162,13 +162,26 @@ test('shipping template escapes customer content, keeps a fixed courier origin a
  const message=shippingEmail({reference:'EP-TEST',customer_name:'<img src=x onerror=alert(1)>',tracking:'7000158682653',items:[{name:'AirPods <Pro>',quantity:1,price:24900}],shipping:2499,total:27399,paid:false,city:'Cluj',county:'Cluj'},{company:'Example',contactEmail:'support@example.com'});
  assert.ok(!message.html.includes('<img src=x'));assert.match(message.html,/&lt;img/);assert.match(message.html,/De achitat la livrare/);assert.match(message.html,/273,99/);assert.match(message.text,/AWB: 7000158682653/);
 });
-test('demo identity and incomplete legal drafts can never activate real checkout',()=>{
+test('demo mode and identity guards hold while policy editing remains independent',()=>{
  const settings={shopName:'ElitePods',shipping:2499,shippingDays:'1–3 zile',contactEmail:'contact@example.com',contactPhone:'0700000000',company:'Test SRL',cui:'123',companyAddress:'Example 10',terms:'Terms',returns:'Returns',privacy:'Privacy',checkoutOpen:true};
  assert.equal(validateSettings(settings).checkoutOpen,true);
  assert.equal(validateSettings({...settings,sellerType:'individual',company:'Vânzător Test',cui:''}).checkoutOpen,true);
  assert.throws(()=>validateSettings({...settings,cui:''}),/identitatea/);
  assert.throws(()=>validateSettings({...settings,sellerType:'unknown'}),/invalid/);
  assert.throws(()=>validateSettings({...settings,demoData:true}),/demonstrative/);
- assert.throws(()=>validateSettings({...settings,...policyDrafts(settings)}),/DE COMPLETAT/);
+ assert.equal(validateSettings({...settings,...policyDrafts(settings)}).checkoutOpen,true);
  assert.equal(emailReadiness({GMAIL_USER:'store@gmail.com'}).configured,false);
 });
+
+
+test('order confirmation is atomic, snapshots accepted terms, and retry dispatch is deduplicated',async()=>{
+ const db=database(),body=input(),settings={terms:'Original terms',returns:'Original returns',privacy:'Original privacy',shippingDays:'1–3 zile',contactEmail:'support@merchant.ro',company:'Merchant',companyAddress:'Real address'};
+ db.sql.prepare('INSERT INTO store_settings(id,value) VALUES (?,?)').run('store',JSON.stringify(settings));
+ await placeOrder(db,body);await placeOrder(db,body);
+ const rows=db.sql.prepare('SELECT * FROM shipping_emails').all();assert.equal(rows.length,1);assert.equal(JSON.parse(rows[0].payload).kind,'receipt');
+ db.sql.prepare('UPDATE store_settings SET value=? WHERE id=?').run(JSON.stringify({...settings,terms:'Changed terms'}),'store');
+ let sends=0;const send=async(_url,options)=>{sends++;const message=JSON.parse(options.body);assert.match(message.text,/Original terms/);assert.doesNotMatch(message.text,/Changed terms/);assert.match(message.text,/273,99/);return Response.json({id:'receipt-accepted'});};
+ await sendPendingForOrder(db,body.idempotencyKey,mailEnvironment,send);await sendPendingForOrder(db,body.idempotencyKey,mailEnvironment,send);assert.equal(sends,1);
+ assert.equal((await orderDetail(db,body.idempotencyKey)).emails[0].state,'sent');
+});
+
