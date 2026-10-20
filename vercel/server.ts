@@ -197,7 +197,7 @@ export async function handleRequest(request:Request,options:Options={}){
       try{const data=await renderWithin((async()=>{const db=await getDatabase();const [products,settings]=await Promise.all([catalog(db),storeSettings(db)]);return {products,settings};})());return storefront(undefined,undefined,data);}
       catch{return storefront(undefined,undefined,{products:DEFAULT_PRODUCTS.map(product=>({...product,stock:null,active:1,version:1})),settings:{...DEFAULT_SETTINGS,checkoutOpen:false}});}
     }
-    if(/^\/produse\/[^/]+$/.test(path)){allowed(method,['GET']);return productPage(decodeURIComponent(path.split('/').pop()!));}
+    if(/^\/produse\/[^/]+$/.test(path)){allowed(method,['GET']);const id=decodeURIComponent(path.split('/').pop()!);try{const data=await renderWithin((async()=>{const db=await getDatabase();const [products,settings]=await Promise.all([catalog(db),storeSettings(db)]);return {products,settings};})(),500);return productPage(id,data);}catch{return productPage(id);}}
     if(/^\/politici\/[^/]+$/.test(path)){
       allowed(method,['GET']);let settings=DEFAULT_SETTINGS;
       try{settings=await storeSettings(await getDatabase());}catch{/* Never invent policies when storage is unavailable. */}

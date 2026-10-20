@@ -1,0 +1,4 @@
+import {offerPriceMarkup} from './campaign-pricing.js';
+import {shippingPolicy} from './shipping-rules.js';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function productOfferMarkup(p,settings,{testMode=false}={}){const off=!p.active||(!testMode&&p.stock===0),open=settings.checkoutOpen||testMode;return `<div class="price-block">${offerPriceMarkup(p,{context:'product'})}</div><button class="button dark" data-buy="${p.id}" ${off||!open?'disabled':''}>${off?'Indisponibil':!open?'Comenzile sunt momentan închise':'Cumpără cu ramburs'} <span>→</span></button><button class="button secondary" data-add="${p.id}" ${off?'disabled':''}>Adaugă în coș <span>+</span></button><p class="offer-delivery">Livrare în ${esc(settings.shippingDays)} · Plată la primire · Fără cont</p><p class="product-shipping">${esc(shippingPolicy(settings))}</p>`;}
