@@ -2,7 +2,7 @@ import type {IncomingMessage,ServerResponse} from 'node:http';
 import {createHash} from 'node:crypto';
 import adminHtml from '../storefront/admin.html?raw';
 import {catalog,clean,CommerceError,decodeOrder,DEFAULT_PRODUCTS,DEFAULT_SETTINGS,placeOrder,storeSettings,updateOrder} from '../lib/commerce';
-import {esc,productPage,storefront} from '../lib/storefront';
+import {esc,productPage,storefront,trackingPage} from '../lib/storefront';
 import {authenticated,authenticationConfigured,checkPassword,clearSession,createSession} from '../lib/vercel-auth';
 import {vercelDatabase,type VercelEnvironment} from '../lib/vercel-database';
 
@@ -122,6 +122,7 @@ export async function handleRequest(request:Request,options:Options={}){
       allowed(method,['POST']);await jsonBody(request);
       return json({ok:true},200,{'Set-Cookie':clearSession(request)});
     }
+    if(path==='/tracking'){allowed(method,['GET']);return trackingPage();}
     if(path==='/admin'){
       allowed(method,['GET']);
       return authenticated(request,environment,options.now)?adminPage():loginPage(authenticationConfigured(environment));
